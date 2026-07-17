@@ -102,6 +102,9 @@ app.post('/api/generate', async (req, res) => {
     if (!moves || !Array.isArray(moves) || moves.length === 0) {
       return res.status(400).json({ error: 'Add at least one move' });
     }
+    if (moves.length > 50) {
+      return res.status(400).json({ error: 'Maximum 50 moves allowed' });
+    }
     const slots = moves.map(buildSlot);
     const json = JSON.stringify(slots);
     const bytes = Buffer.from(json, 'utf-8');
@@ -117,7 +120,10 @@ app.post('/api/generate', async (req, res) => {
 app.post('/api/decode', async (req, res) => {
   try {
     const { code } = req.body;
+    if (!code || typeof code !== 'string') return res.status(400).json({ error: 'code required' });
+    if (code.length > 100000) return res.status(400).json({ error: 'Code too large' });
     const compressed = Buffer.from(code.trim(), 'base64');
+    if (compressed.length > 65536) return res.status(400).json({ error: 'Compressed payload too large' });
     const decompressed = await decompress(compressed);
     const json = JSON.parse(decompressed.toString('utf-8'));
     res.json({ slots: json });
@@ -127,7 +133,14 @@ app.post('/api/decode', async (req, res) => {
 });
 
 // ── BETA AUTH ──
-app.post('/api/auth', (req, res) => {
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many auth attempts, try again later.' }
+});
+app.post('/api/auth', authLimiter, (req, res) => {
   const { password } = req.body;
   if (password === BETA_PASS) {
     res.json({ ok: true, token: VALID_TOKEN });
@@ -139,8 +152,8 @@ app.post('/api/auth', (req, res) => {
 // ── LIBRARY: list codes ──
 app.get('/api/library', async (req, res) => {
   try {
-    const sort = req.query.sort || 'likes'; // likes | copies | new
-    const column = sort === 'new' ? 'created_at' : sort;
+    const SORT_MAP = { likes: 'likes', copies: 'copies', new: 'created_at' };
+    const column = SORT_MAP[req.query.sort] || 'likes';
     const { data, error } = await supabase
       .from('codes')
       .select('id, name, character, tags, author, likes, copies, created_at')

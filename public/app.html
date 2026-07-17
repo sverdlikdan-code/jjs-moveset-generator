@@ -1260,20 +1260,24 @@ function updateLivePreview() {
   }).join('');
 }
 
+const ALLOWED_TYPES = new Set(['SKILL','MELEE','SPECIAL','CHASE','AWAKENING']);
+
 // ── MOVE PREVIEW (anime cards for decode) ──
 function renderSlotCards(slots, containerId) {
   const cardsEl = document.getElementById(containerId);
   cardsEl.innerHTML = slots.map((slot, i) => {
-    const type = (slot.K_NAME || 'SKILL').toUpperCase();
+    const rawType = String(slot.K_NAME || '').toUpperCase();
+    const type = ALLOWED_TYPES.has(rawType) ? rawType : 'SKILL';
     const meta = SLOT_META[type] || DEFAULT_META;
     let dmg = '—', stun = '—', force = '—';
     try {
       const parsed = JSON.parse(slot.DATA);
       const hitbox = parsed.Line.find(l => l.K_NAME === 'HITBOX');
       const velo   = parsed.Line.find(l => l.K_NAME === 'VELO');
-      if (hitbox) { dmg = hitbox.DAMAGE ?? '—'; stun = hitbox.STUN ?? '—'; }
-      if (velo)   { force = velo.FORCE ?? '—'; }
+      if (hitbox) { dmg = escHtml(String(hitbox.DAMAGE ?? '—')); stun = escHtml(String(hitbox.STUN ?? '—')); }
+      if (velo)   { force = escHtml(String(velo.FORCE ?? '—')); }
     } catch(e) {}
+    const cooldown = escHtml(String(slot.COOLDOWN ?? '—'));
     return `<div class="live-card" style="--c-glow:${meta.glow};--c-border:${meta.border};--c-accent:${meta.accent}">
       <div class="live-card-header" style="background:${meta.g}" data-symbol="${meta.symbol}">
         <span class="live-card-type">${type}</span>
@@ -1292,7 +1296,7 @@ function renderSlotCards(slots, containerId) {
           </div>
           <div class="live-stat">
             <span class="live-stat-label">COOLDOWN</span>
-            <span class="live-stat-value">${slot.COOLDOWN ?? '—'}s</span>
+            <span class="live-stat-value">${cooldown}s</span>
           </div>
           <div class="live-stat">
             <span class="live-stat-label">FORCE</span>
@@ -1318,7 +1322,7 @@ async function renderMovePreview(code) {
 }
 
 function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 function getAuthHeaders() {
