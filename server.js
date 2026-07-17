@@ -76,5 +76,15 @@ app.post('/api/decode', async (req, res) => {
   }
 });
 
+app.post('/api/auth', (req, res) => {
+  const { password } = req.body;
+  const BETA_PASS = process.env.BETA_PASSWORD || 'JJS-BETA-2025';
+  if (password === BETA_PASS) {
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ ok: false });
+  }
+});
+
 const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => console.log(`JJS Generator: http://localhost:${PORT}`));
