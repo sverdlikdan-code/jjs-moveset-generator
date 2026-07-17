@@ -13,6 +13,7 @@
   "type": "commonjs",
   "dependencies": {
     "@mongodb-js/zstd": "^7.0.0",
+    "@supabase/supabase-js": "^2.110.7",
     "express": "^5.2.1"
   }
 }
