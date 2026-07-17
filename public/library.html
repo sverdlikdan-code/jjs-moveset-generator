@@ -509,6 +509,14 @@ header::after {
 </style>
 </head>
 <body>
+<script>
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem('jjs_beta_auth'));
+    if (!s || !s.ok || (Date.now() - s.ts) > 30*24*60*60*1000) { window.location.href = '/'; }
+  } catch(e) { window.location.href = '/'; }
+})();
+</script>
 
 <header>
   <div class="header-inner">
