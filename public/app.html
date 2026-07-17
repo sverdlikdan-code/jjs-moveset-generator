@@ -888,6 +888,8 @@ async function generateCode() {
 function copyCode() {
   const code = document.getElementById('code-output').textContent;
   navigator.clipboard.writeText(code);
+  playTone(880, 'sine', 0.08, 0.25, true);
+  setTimeout(() => playTone(1100, 'sine', 0.08, 0.2, true), 70);
   const btn = document.getElementById('copy-btn');
   btn.textContent = '✓ Copied!';
   btn.classList.add('copied');
@@ -1135,17 +1137,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Play entry sound on first user interaction (browser requires user gesture for AudioContext)
-  const playEntryOnce = () => {
-    const stored = (() => { try { return JSON.parse(localStorage.getItem(GATE_KEY)); } catch(e) { return null; } })();
-    if (stored && stored.ok) {
-      playTone(440, 'sine', 0.12, 0.2, true);
-      setTimeout(() => playTone(660, 'triangle', 0.15, 0.18, true), 100);
-    }
-    document.removeEventListener('click', playEntryOnce);
-    document.removeEventListener('keydown', playEntryOnce);
-  };
-  document.addEventListener('click', playEntryOnce, { once: true });
-  document.addEventListener('keydown', playEntryOnce, { once: true });
+  // Global click sounds for all interactive elements
+  document.addEventListener('click', e => {
+    const el = e.target.closest('button, .tab, .lang-option, .copy-btn, .btn-add, .btn-danger');
+    if (!el) return;
+    // Generate and Copy have their own bigger sounds — skip click sound for them
+    if (el.classList.contains('btn-generate') || el.id === 'copy-btn') return;
+    soundClick();
+  });
 });
 
 // Wrap generate button with sound
