@@ -770,6 +770,35 @@ select {
 .toggle-thumb { width: 18px; height: 18px; border-radius: 50%; background: #64748b; transition: transform 0.2s, background 0.2s; }
 .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(20px); background: #7c3aed; }
 
+/* decode output header */
+.decode-output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.btn-edit-build {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: none; border-radius: 8px; color: #fff;
+  font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 700;
+  letter-spacing: 1px; padding: 8px 18px; cursor: pointer;
+  box-shadow: 0 0 12px rgba(16,185,129,0.3);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+.btn-edit-build:hover { box-shadow: 0 0 24px rgba(16,185,129,0.6); transform: translateY(-1px); }
+
+/* field tooltips */
+label[data-tip] { position: relative; cursor: help; }
+label[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px); left: 0;
+  background: #0f172a; border: 1px solid rgba(124,58,237,0.4);
+  color: #94a3b8; font-size: 0.67rem; font-weight: 400;
+  letter-spacing: 0; text-transform: none;
+  padding: 6px 10px; border-radius: 6px;
+  width: max-content; max-width: 200px; white-space: normal;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s; z-index: 200;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+label[data-tip]:hover::after { opacity: 1; }
+
 /* live card footer chips */
 .live-card-footer { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
 .live-chip { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.8px; padding: 2px 8px; border-radius: 8px; }
@@ -1024,7 +1053,10 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
       </div>
     </div>
     <div class="move-preview" id="decode-output" style="display:none">
-      <div class="preview-label">Decoded Moves</div>
+      <div class="decode-output-header">
+        <div class="preview-label">Decoded Moves</div>
+        <button class="btn-edit-build" onclick="loadDecodedIntoGenerator()">✏ Edit This Build →</button>
+      </div>
       <div id="decode-cards"></div>
     </div>
   </div>
@@ -1055,11 +1087,11 @@ function addMove() {
     </div>
     <div class="grid2" style="margin-bottom:12px;">
       <div>
-        <label>Move Name</label>
+        <label data-tip="Name displayed in the game skill builder">Move Name</label>
         <input type="text" id="name-${id}" placeholder="e.g. Hollow Purple" value="Custom Strike">
       </div>
       <div>
-        <label>Slot Type</label>
+        <label data-tip="SKILL=Q · EVASIVE=F · SPECIAL=R · MELEE=M1 · CHASE=follow-up · AWAKENING=ultimate">Slot Type</label>
         <select id="slotType-${id}" onchange="updateBadge(${id})">
           ${SLOT_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
         </select>
@@ -1067,41 +1099,41 @@ function addMove() {
     </div>
     <div class="grid3" style="margin-bottom:12px;">
       <div>
-        <label>Damage</label>
+        <label data-tip="HP removed from enemy on hit (0–999)">Damage</label>
         <input type="number" id="damage-${id}" value="25" min="1" max="999">
       </div>
       <div>
-        <label>Stun (sec)</label>
+        <label data-tip="Seconds the enemy is frozen after being hit">Stun (sec)</label>
         <input type="number" id="stun-${id}" value="0.5" step="0.1" min="0">
       </div>
       <div>
-        <label>Cooldown (sec)</label>
+        <label data-tip="Seconds before this move can be used again">Cooldown (sec)</label>
         <input type="number" id="cooldown-${id}" value="5" min="0">
       </div>
     </div>
     <div class="grid3" style="margin-bottom:12px;">
       <div>
-        <label>Attack Type</label>
+        <label data-tip="Normal: standard · Heavy: staggers · Unblockable: bypasses guard · Grab: ignores block">Attack Type</label>
         <select id="attackType-${id}">
           ${ATTACK_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
         </select>
       </div>
       <div>
-        <label>Force Z (Forward)</label>
+        <label data-tip="Forward knockback — how far enemy is pushed away from you">Force Z (Forward)</label>
         <input type="number" id="force-${id}" value="50" min="0" max="999">
       </div>
       <div>
-        <label>Duration (sec)</label>
+        <label data-tip="How long the move animation lasts before ending">Duration (sec)</label>
         <input type="number" id="duration-${id}" value="0.5" step="0.1" min="0.1">
       </div>
     </div>
     <div class="grid2-extra">
       <div>
-        <label>Force Y (Launch ↑)</label>
+        <label data-tip="Vertical launch force — positive = launches enemy upward for juggle combos · 0 = no launch">Force Y (Launch ↑)</label>
         <input type="number" id="forceY-${id}" value="0" min="-999" max="999">
       </div>
       <div class="blockable-wrap">
-        <label>Blockable</label>
+        <label data-tip="ON = enemy can guard this move · OFF = bypasses guard completely">Blockable</label>
         <label class="toggle-switch">
           <input type="checkbox" id="blockable-${id}" checked onchange="updateLivePreview()">
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
@@ -1187,6 +1219,8 @@ function copyCode() {
   setTimeout(() => { btn.textContent = '⎘ Copy Code'; btn.classList.remove('copied'); }, 2000);
 }
 
+let lastDecodedSlots = [];
+
 async function decodeCode() {
   document.getElementById('decode-error').textContent = '';
   document.getElementById('decode-output').style.display = 'none';
@@ -1197,11 +1231,61 @@ async function decodeCode() {
     if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    lastDecodedSlots = data.slots;
     renderSlotCards(data.slots, 'decode-cards');
     document.getElementById('decode-output').style.display = 'block';
   } catch(err) {
     document.getElementById('decode-error').textContent = 'Error: ' + err.message;
   }
+}
+
+function populateMoveFields(id, slot) {
+  const nameEl = document.getElementById(`name-${id}`);
+  const slotTypeEl = document.getElementById(`slotType-${id}`);
+  const cooldownEl = document.getElementById(`cooldown-${id}`);
+  if (nameEl) nameEl.value = slot.NAME || 'Custom Move';
+  if (slotTypeEl) { slotTypeEl.value = slot.K_NAME || 'SKILL'; updateBadge(id); }
+  if (cooldownEl) cooldownEl.value = slot.COOLDOWN || 5;
+  try {
+    const parsed = JSON.parse(slot.DATA);
+    const hitbox = parsed.Line.find(l => l.K_NAME === 'HITBOX');
+    const velo   = parsed.Line.find(l => l.K_NAME === 'VELO');
+    const wait   = parsed.Line.find(l => l.K_NAME === 'WAIT');
+    if (hitbox) {
+      const dmgEl = document.getElementById(`damage-${id}`);
+      const stunEl = document.getElementById(`stun-${id}`);
+      const atEl = document.getElementById(`attackType-${id}`);
+      const blkEl = document.getElementById(`blockable-${id}`);
+      if (dmgEl) dmgEl.value = hitbox.DAMAGE ?? 20;
+      if (stunEl) stunEl.value = hitbox.STUN ?? 0.5;
+      if (atEl) atEl.value = hitbox['ATTACK TYPE'] || 'Normal';
+      if (blkEl) blkEl.checked = hitbox.BLOCKABLE !== false;
+    }
+    if (velo) {
+      const forceEl = document.getElementById(`force-${id}`);
+      const forceYEl = document.getElementById(`forceY-${id}`);
+      if (forceEl) forceEl.value = velo.FORCE ?? 50;
+      if (forceYEl) forceYEl.value = velo.Y ?? 0;
+    }
+    if (wait) {
+      const durEl = document.getElementById(`duration-${id}`);
+      if (durEl) durEl.value = wait.TIME ?? 0.5;
+    }
+  } catch(e) {}
+}
+
+function loadDecodedIntoGenerator() {
+  if (!lastDecodedSlots.length) return;
+  document.getElementById('moves-list').innerHTML = '';
+  moveCount = 0;
+  lastDecodedSlots.forEach(slot => {
+    addMove();
+    populateMoveFields(moveCount, slot);
+  });
+  updateLivePreview();
+  const genTab = document.querySelector('.tab');
+  switchTab('gen', genTab);
+  genTab.classList.add('active');
 }
 
 function switchTab(name, el) {
