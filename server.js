@@ -76,5 +76,5 @@ app.post('/api/decode', async (req, res) => {
   }
 });
 
-const PORT = 4242;
+const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => console.log(`JJS Generator: http://localhost:${PORT}`));
