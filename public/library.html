@@ -876,13 +876,21 @@ async function quickCopy(id, btn) {
   try {
     const res = await fetch(`/api/library/${id}`, { headers: getAuthHeaders() });
     if (res.status === 401) { handleUnauth(); return; }
+    if (!res.ok) { showToast('Server error ' + res.status); return; }
     const data = await res.json();
-    navigator.clipboard.writeText(data.code);
+    if (!data.code) { showToast('No code in response'); return; }
+    try {
+      await navigator.clipboard.writeText(data.code);
+    } catch(clipErr) {
+      // Fallback: prompt с кодом
+      prompt('Copy this code:', data.code);
+      return;
+    }
     btn.textContent = '✓';
     btn.classList.add('copied');
     showToast('Code copied!');
     setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 2000);
-  } catch(e) { showToast('Error'); }
+  } catch(e) { showToast('Error: ' + e.message); }
 }
 
 async function likeCode(id, btn) {
