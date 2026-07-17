@@ -547,11 +547,51 @@ select {
   box-shadow: 0 0 16px rgba(74,222,128,0.25);
 }
 
-.json-preview {
-  margin-top: 12px;
+.move-preview {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.preview-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
   color: var(--text-dim);
-  font-size: 0.72rem;
-  font-family: monospace;
+  margin-bottom: 2px;
+}
+.preview-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeSlideIn 0.2s ease;
+}
+.preview-card-info { flex: 1; min-width: 0; }
+.preview-move-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preview-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.preview-stat {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+.preview-stat span {
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* ── DECODE PANEL ── */
@@ -735,7 +775,10 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
       <div class="result-label">Your JJS Import Code — paste in Skill Builder</div>
       <div class="code-output" id="code-output"></div>
       <button class="copy-btn" id="copy-btn" onclick="copyCode()">⎘ Copy Code</button>
-      <div class="json-preview" id="json-preview"></div>
+      <div class="move-preview" id="move-preview" style="display:none">
+        <div class="preview-label">Move Preview</div>
+        <div id="preview-cards"></div>
+      </div>
     </div>
     <div class="error" id="gen-error"></div>
   </div>
@@ -873,10 +916,10 @@ async function generateCode() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     document.getElementById('code-output').textContent = data.code;
-    document.getElementById('json-preview').textContent = 'Preview: ' + data.jsonPreview;
     const box = document.getElementById('result-box');
     box.style.display = 'block';
     document.getElementById('gen-status').textContent = `✓ ${data.slotsCount} slot(s) generated`;
+    renderMovePreview(data.code);
   } catch(err) {
     document.getElementById('gen-error').textContent = 'Error: ' + err.message;
   } finally {
@@ -1016,6 +1059,54 @@ function applyLang() {
     const removeBtns = el.querySelectorAll('.btn-danger');
     removeBtns.forEach(b => b.textContent = t('remove'));
   }
+}
+
+// ── MOVE PREVIEW ──
+const BADGE_COLORS = { SKILL:'#60a5fa', MELEE:'#f87171', SPECIAL:'#c084fc', CHASE:'#4ade80', AWAKENING:'#fbbf24' };
+
+async function renderMovePreview(code) {
+  const previewEl = document.getElementById('move-preview');
+  const cardsEl   = document.getElementById('preview-cards');
+  previewEl.style.display = 'none';
+  cardsEl.innerHTML = '';
+
+  try {
+    const res  = await fetch('/api/decode', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code }) });
+    const data = await res.json();
+    if (data.error || !data.slots) return;
+
+    cardsEl.innerHTML = data.slots.map(slot => {
+      const type  = slot.K_NAME || 'SKILL';
+      const color = BADGE_COLORS[type] || '#a78bfa';
+      let dmg = '—', stun = '—', force = '—';
+      try {
+        const parsed = JSON.parse(slot.DATA);
+        const hitbox = parsed.Line.find(l => l.K_NAME === 'HITBOX');
+        const velo   = parsed.Line.find(l => l.K_NAME === 'VELO');
+        if (hitbox) { dmg = hitbox.DAMAGE ?? '—'; stun = hitbox.STUN ?? '—'; }
+        if (velo)   { force = velo.FORCE ?? '—'; }
+      } catch(e) {}
+
+      return `<div class="preview-card">
+        <span class="slot-badge slot-${type}" style="flex-shrink:0">${type}</span>
+        <div class="preview-card-info">
+          <div class="preview-move-name">${escHtml(slot.NAME || 'Unnamed')}</div>
+          <div class="preview-stats">
+            <span class="preview-stat">DMG <span style="color:${color}">${dmg}</span></span>
+            <span class="preview-stat">STUN <span>${stun}s</span></span>
+            <span class="preview-stat">CD <span>${slot.COOLDOWN ?? '—'}s</span></span>
+            <span class="preview-stat">FORCE <span>${force}</span></span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    previewEl.style.display = 'flex';
+  } catch(e) {}
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ── SOUNDS (Web Audio API, no external files) ──
