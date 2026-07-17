@@ -4,72 +4,586 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JJS Moveset Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0d0d0d; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+:root {
+  --bg-deep: #07070f;
+  --bg-card: #0e0e1a;
+  --bg-input: #161628;
+  --accent: #7c3aed;
+  --accent-light: #c084fc;
+  --accent-glow: rgba(124,58,237,0.5);
+  --cyan: #22d3ee;
+  --cyan-glow: rgba(34,211,238,0.4);
+  --red: #ef4444;
+  --green: #4ade80;
+  --yellow: #fbbf24;
+  --orange: #f97316;
+  --border: rgba(124,58,237,0.2);
+  --border-hover: rgba(124,58,237,0.6);
+  --text: #e2e8f0;
+  --text-dim: #64748b;
+}
 
-  header { background: linear-gradient(135deg, #1a0a2e, #16213e); padding: 24px 32px; border-bottom: 1px solid #2a1a4e; }
-  header h1 { font-size: 1.6rem; font-weight: 700; color: #c084fc; letter-spacing: 1px; }
-  header p { color: #94a3b8; font-size: 0.85rem; margin-top: 4px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .container { max-width: 900px; margin: 0 auto; padding: 32px 16px; }
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-  .tab { padding: 8px 20px; border-radius: 8px; border: 1px solid #2a1a4e; background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
-  .tab.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+/* Scanline effect */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
 
-  .panel { display: none; }
-  .panel.active { display: block; }
+/* Ambient glow background */
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
 
-  .card { background: #111827; border: 1px solid #1e2a3a; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .card-title { font-size: 0.95rem; font-weight: 600; color: #c084fc; }
+/* ── HEADER ── */
+header {
+  position: relative;
+  background: linear-gradient(180deg, #0f0520 0%, #07070f 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 32px;
+  overflow: hidden;
+  z-index: 1;
+}
 
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+header::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), var(--accent), transparent);
+  animation: scanline 3s linear infinite;
+}
 
-  label { display: block; font-size: 0.78rem; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  input, select { width: 100%; padding: 8px 12px; background: #1e293b; border: 1px solid #2d3748; border-radius: 8px; color: #e2e8f0; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
-  input:focus, select:focus { border-color: #7c3aed; }
+@keyframes scanline {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.4; }
+}
 
-  .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-  .btn-primary { background: #7c3aed; color: #fff; }
-  .btn-primary:hover { background: #6d28d9; }
-  .btn-danger { background: #991b1b; color: #fca5a5; font-size: 0.8rem; padding: 6px 12px; }
-  .btn-add { background: #1e293b; border: 1px dashed #374151; color: #60a5fa; width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
-  .btn-add:hover { border-color: #60a5fa; background: #1e3a5f22; }
+.header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
-  .result-box { background: #0f172a; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-top: 20px; }
-  .result-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-  .code-output { word-break: break-all; font-family: monospace; font-size: 0.8rem; color: #a5f3fc; max-height: 120px; overflow-y: auto; }
-  .copy-btn { margin-top: 12px; background: #0e7490; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-  .copy-btn:hover { background: #0891b2; }
-  .copy-btn.copied { background: #16a34a; }
+.logo-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 0 12px var(--accent));
+  animation: pulse-icon 2.5s ease-in-out infinite;
+}
 
-  .decode-area textarea { width: 100%; min-height: 100px; padding: 12px; background: #1e293b; border: 1px solid #2d3748; border-radius: 8px; color: #e2e8f0; font-size: 0.8rem; font-family: monospace; resize: vertical; }
-  pre { background: #0f172a; padding: 16px; border-radius: 8px; overflow: auto; max-height: 400px; font-size: 0.78rem; color: #86efac; border: 1px solid #1e3a5f; }
+@keyframes pulse-icon {
+  0%, 100% { filter: drop-shadow(0 0 8px var(--accent)); }
+  50%       { filter: drop-shadow(0 0 20px var(--accent)) drop-shadow(0 0 40px var(--cyan-glow)); }
+}
 
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
-  .badge-skill { background: #1e3a5f; color: #60a5fa; }
-  .badge-melee { background: #3f1f1f; color: #f87171; }
-  .badge-special { background: #2d1f3f; color: #c084fc; }
+.logo-text h1 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px var(--accent-glow);
+}
 
-  .move-number { color: #4b5563; font-size: 0.8rem; }
-  .error { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
-  .success { color: #4ade80; font-size: 0.85rem; }
+.logo-text p {
+  color: var(--accent-light);
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── CONTAINER ── */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 16px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 20px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--accent), #6d28d9);
+  color: #fff;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.tab:not(.active):hover { color: var(--accent-light); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+  animation: fadeSlideIn 0.2s ease forwards;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 0 20px rgba(124,58,237,0.1);
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  letter-spacing: 0.5px;
+}
+
+.move-number { color: var(--text-dim); font-weight: 500; }
+
+/* ── SLOT TYPE BADGE ── */
+.slot-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+.slot-SKILL    { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+.slot-MELEE    { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.slot-SPECIAL  { background: rgba(192,132,252,0.15);color: #c084fc; border: 1px solid rgba(192,132,252,0.3); }
+.slot-CHASE    { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.slot-AWAKENING{ background: rgba(249,115,22,0.15); color: #f97316; border: 1px solid rgba(249,115,22,0.3); }
+
+/* ── FORM ELEMENTS ── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+input, select {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg-input);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237c3aed' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 11px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 28px rgba(124,58,237,0.7);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+.btn-generate {
+  background: linear-gradient(135deg, #7c3aed, #22d3ee);
+  color: #fff;
+  font-size: 1rem;
+  padding: 13px 36px;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.5);
+  letter-spacing: 1.5px;
+}
+
+.btn-generate:hover {
+  box-shadow: 0 4px 36px rgba(124,58,237,0.8), 0 0 60px rgba(34,211,238,0.2);
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background: rgba(239,68,68,0.1);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.3);
+  font-size: 0.78rem;
+  padding: 6px 14px;
+  min-height: auto;
+}
+
+.btn-danger:hover {
+  background: rgba(239,68,68,0.2);
+  box-shadow: 0 0 12px rgba(239,68,68,0.3);
+}
+
+.btn-add {
+  background: transparent;
+  border: 1px dashed rgba(124,58,237,0.4);
+  color: var(--accent-light);
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+
+.btn-add:hover {
+  border-color: var(--accent);
+  background: rgba(124,58,237,0.08);
+  box-shadow: 0 0 16px rgba(124,58,237,0.15);
+}
+
+/* ── RESULT BOX ── */
+.result-box {
+  background: linear-gradient(135deg, #0a0a18, #0d0d1f);
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.result-box.glow {
+  box-shadow: 0 0 30px rgba(34,211,238,0.15), inset 0 0 30px rgba(34,211,238,0.03);
+  animation: result-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes result-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(34,211,238,0.15); }
+  50%       { box-shadow: 0 0 36px rgba(34,211,238,0.35); }
+}
+
+.result-label {
+  font-size: 0.7rem;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.result-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan);
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.code-output {
+  word-break: break-all;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.78rem;
+  color: var(--cyan);
+  max-height: 100px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.code-output::-webkit-scrollbar { width: 4px; }
+.code-output::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+.copy-btn {
+  margin-top: 14px;
+  background: rgba(34,211,238,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(34,211,238,0.35);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: rgba(34,211,238,0.2);
+  box-shadow: 0 0 16px rgba(34,211,238,0.3);
+}
+
+.copy-btn.copied {
+  background: rgba(74,222,128,0.15);
+  color: var(--green);
+  border-color: rgba(74,222,128,0.4);
+  box-shadow: 0 0 16px rgba(74,222,128,0.25);
+}
+
+.json-preview {
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-family: monospace;
+}
+
+/* ── DECODE PANEL ── */
+.decode-area textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-family: 'Fira Code', monospace;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.decode-area textarea:focus { border-color: var(--accent); }
+
+pre {
+  background: #050510;
+  padding: 16px;
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 400px;
+  font-size: 0.78rem;
+  color: #86efac;
+  border: 1px solid rgba(74,222,128,0.2);
+  margin-top: 12px;
+}
+
+pre::-webkit-scrollbar { width: 4px; }
+pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+/* ── STATUS MESSAGES ── */
+.error   { color: var(--red);   font-size: 0.85rem; margin-top: 8px; }
+.success { color: var(--green); font-size: 0.85rem; }
+
+.gen-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── DIVIDER ── */
+.section-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 8px 0 16px;
+}
+
+/* ── LANGUAGE SELECTOR ── */
+.lang-selector {
+  margin-left: auto;
+  position: relative;
+}
+
+.lang-btn {
+  background: rgba(124,58,237,0.15);
+  border: 1px solid var(--border);
+  color: var(--accent-light);
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.lang-btn:hover {
+  border-color: var(--accent);
+  background: rgba(124,58,237,0.25);
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #0f0f20;
+  border: 1px solid var(--border-hover);
+  border-radius: 10px;
+  padding: 6px;
+  display: none;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 24px rgba(124,58,237,0.15);
+}
+
+.lang-dropdown.open { display: block; animation: fadeSlideIn 0.15s ease; }
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+
+.lang-option:hover { background: rgba(124,58,237,0.15); color: #fff; }
+.lang-option.active { color: var(--accent-light); background: rgba(124,58,237,0.1); }
+
+.lang-flag { font-size: 1.1rem; }
+.lang-name { font-size: 0.82rem; }
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  header { padding: 16px; }
+  .logo-text h1 { font-size: 1.25rem; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .container { padding: 20px 12px 60px; }
+  .btn-generate { width: 100%; }
+  .lang-btn .lang-name { display: none; }
+}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>⚡ JJS Moveset Generator</h1>
-  <p>Jujutsu Shenanigans — Custom Skill Builder Code Generator</p>
+  <div class="header-inner">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">
+      <h1>JJS Moveset Generator</h1>
+      <p>Jujutsu Shenanigans — Custom Skill Builder</p>
+    </div>
+    <div class="lang-selector">
+      <button class="lang-btn" onclick="toggleLangDropdown()" id="lang-btn-main">
+        <span id="lang-flag-current">🇺🇸</span>
+        <span class="lang-name" id="lang-name-current">EN</span>
+        <span>▾</span>
+      </button>
+      <div class="lang-dropdown" id="lang-dropdown"></div>
+    </div>
+  </div>
 </header>
 
 <div class="container">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('generate')">Generate Code</button>
-    <button class="tab" onclick="switchTab('decode')">Decode Code</button>
+    <button class="tab active" onclick="switchTab('generate', this)">⚔ Generate Code</button>
+    <button class="tab" onclick="switchTab('decode', this)">🔍 Decode Code</button>
   </div>
 
   <!-- GENERATE PANEL -->
@@ -78,16 +592,16 @@
 
     <button class="btn-add" onclick="addMove()">+ Add Move</button>
 
-    <div style="margin-top: 20px; display: flex; gap: 12px; align-items: center;">
-      <button class="btn btn-primary" onclick="generateCode()">Generate Code</button>
+    <div class="gen-actions">
+      <button class="btn btn-generate" onclick="generateCode()">Generate Code</button>
       <span id="gen-status" class="success"></span>
     </div>
 
-    <div class="result-box" id="result-box" style="display:none;">
-      <div class="result-label">Your JJS Import Code — paste this in Skill Builder</div>
+    <div class="result-box glow" id="result-box" style="display:none;">
+      <div class="result-label">Your JJS Import Code — paste in Skill Builder</div>
       <div class="code-output" id="code-output"></div>
-      <button class="copy-btn" id="copy-btn" onclick="copyCode()">Copy Code</button>
-      <div style="margin-top:12px; color: #64748b; font-size: 0.75rem;" id="json-preview"></div>
+      <button class="copy-btn" id="copy-btn" onclick="copyCode()">⎘ Copy Code</button>
+      <div class="json-preview" id="json-preview"></div>
     </div>
     <div class="error" id="gen-error"></div>
   </div>
@@ -95,12 +609,15 @@
   <!-- DECODE PANEL -->
   <div class="panel" id="panel-decode">
     <div class="card">
-      <div class="card-title" style="margin-bottom: 12px;">Paste a JJS import code to decode it</div>
+      <div class="card-title" style="margin-bottom:12px;">🔍 Paste a JJS import code to inspect it</div>
+      <hr class="section-divider">
       <div class="decode-area">
         <textarea id="decode-input" placeholder="Paste base64 code here..."></textarea>
       </div>
-      <button class="btn btn-primary" style="margin-top: 12px;" onclick="decodeCode()">Decode</button>
-      <div class="error" id="decode-error"></div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="decodeCode()">Decode</button>
+        <span class="error" id="decode-error" style="display:inline;margin-left:12px;"></span>
+      </div>
     </div>
     <pre id="decode-output" style="display:none;"></pre>
   </div>
@@ -109,8 +626,14 @@
 <script>
 let moveCount = 0;
 
-const SLOT_TYPES = ['SKILL', 'MELEE', 'SPECIAL', 'CHASE', 'AWAKENING'];
-const ATTACK_TYPES = ['Normal', 'Heavy', 'Unblockable', 'Grab'];
+const SLOT_TYPES    = ['SKILL','MELEE','SPECIAL','CHASE','AWAKENING'];
+const ATTACK_TYPES  = ['Normal','Heavy','Unblockable','Grab'];
+
+function slotBadgeHtml(id) {
+  const sel = document.getElementById(`slotType-${id}`);
+  const val = sel ? sel.value : 'SKILL';
+  return `<span class="slot-badge slot-${val}" id="badge-${id}">${val}</span>`;
+}
 
 function addMove() {
   moveCount++;
@@ -120,8 +643,8 @@ function addMove() {
   div.id = `move-${id}`;
   div.innerHTML = `
     <div class="card-header">
-      <span class="card-title">Move <span class="move-number">#${id}</span></span>
-      <button class="btn btn-danger" onclick="removeMove(${id})">Remove</button>
+      <span class="card-title">Move <span class="move-number">#${id}</span><span class="slot-badge slot-SKILL" id="badge-${id}">SKILL</span></span>
+      <button class="btn btn-danger" onclick="removeMove(${id})">✕ Remove</button>
     </div>
     <div class="grid2" style="margin-bottom:12px;">
       <div>
@@ -130,7 +653,7 @@ function addMove() {
       </div>
       <div>
         <label>Slot Type</label>
-        <select id="slotType-${id}">
+        <select id="slotType-${id}" onchange="updateBadge(${id})">
           ${SLOT_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
         </select>
       </div>
@@ -169,6 +692,14 @@ function addMove() {
   document.getElementById('moves-list').appendChild(div);
 }
 
+function updateBadge(id) {
+  const val = document.getElementById(`slotType-${id}`).value;
+  const badge = document.getElementById(`badge-${id}`);
+  if (!badge) return;
+  badge.className = `slot-badge slot-${val}`;
+  badge.textContent = val;
+}
+
 function removeMove(id) {
   document.getElementById(`move-${id}`)?.remove();
 }
@@ -179,14 +710,14 @@ function getMoveData() {
     const el = document.getElementById(`move-${i}`);
     if (!el) continue;
     moves.push({
-      name: document.getElementById(`name-${i}`)?.value,
-      slotType: document.getElementById(`slotType-${i}`)?.value,
-      damage: document.getElementById(`damage-${i}`)?.value,
-      stun: document.getElementById(`stun-${i}`)?.value,
-      cooldown: document.getElementById(`cooldown-${i}`)?.value,
+      name:       document.getElementById(`name-${i}`)?.value,
+      slotType:   document.getElementById(`slotType-${i}`)?.value,
+      damage:     document.getElementById(`damage-${i}`)?.value,
+      stun:       document.getElementById(`stun-${i}`)?.value,
+      cooldown:   document.getElementById(`cooldown-${i}`)?.value,
       attackType: document.getElementById(`attackType-${i}`)?.value,
-      force: document.getElementById(`force-${i}`)?.value,
-      duration: document.getElementById(`duration-${i}`)?.value,
+      force:      document.getElementById(`force-${i}`)?.value,
+      duration:   document.getElementById(`duration-${i}`)?.value,
     });
   }
   return moves;
@@ -196,24 +727,27 @@ async function generateCode() {
   document.getElementById('gen-error').textContent = '';
   document.getElementById('gen-status').textContent = '';
   const moves = getMoveData();
-  if (moves.length === 0) {
-    document.getElementById('gen-error').textContent = 'Добавь хотя бы один move';
+  if (!moves.length) {
+    document.getElementById('gen-error').textContent = 'Add at least one move first';
     return;
   }
+  const btn = document.querySelector('.btn-generate');
+  btn.textContent = '⚡ Generating...';
+  btn.disabled = true;
   try {
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ moves })
-    });
+    const res  = await fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({moves}) });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     document.getElementById('code-output').textContent = data.code;
-    document.getElementById('json-preview').textContent = 'JSON preview: ' + data.jsonPreview;
-    document.getElementById('result-box').style.display = 'block';
+    document.getElementById('json-preview').textContent = 'Preview: ' + data.jsonPreview;
+    const box = document.getElementById('result-box');
+    box.style.display = 'block';
     document.getElementById('gen-status').textContent = `✓ ${data.slotsCount} slot(s) generated`;
-  } catch (err) {
+  } catch(err) {
     document.getElementById('gen-error').textContent = 'Error: ' + err.message;
+  } finally {
+    btn.textContent = 'Generate Code';
+    btn.disabled = false;
   }
 }
 
@@ -221,9 +755,9 @@ function copyCode() {
   const code = document.getElementById('code-output').textContent;
   navigator.clipboard.writeText(code);
   const btn = document.getElementById('copy-btn');
-  btn.textContent = 'Copied!';
+  btn.textContent = '✓ Copied!';
   btn.classList.add('copied');
-  setTimeout(() => { btn.textContent = 'Copy Code'; btn.classList.remove('copied'); }, 2000);
+  setTimeout(() => { btn.textContent = '⎘ Copy Code'; btn.classList.remove('copied'); }, 2000);
 }
 
 async function decodeCode() {
@@ -232,29 +766,131 @@ async function decodeCode() {
   const code = document.getElementById('decode-input').value.trim();
   if (!code) return;
   try {
-    const res = await fetch('/api/decode', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
+    const res  = await fetch('/api/decode', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code}) });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     const out = document.getElementById('decode-output');
     out.textContent = JSON.stringify(data.slots, null, 2);
     out.style.display = 'block';
-  } catch (err) {
+  } catch(err) {
     document.getElementById('decode-error').textContent = 'Error: ' + err.message;
   }
 }
 
-function switchTab(name) {
+function switchTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${name}`).classList.add('active');
-  event.target.classList.add('active');
+  el.classList.add('active');
 }
 
-// Start with one move
+// ── i18n ──
+const LANGS = [
+  { code:'en', flag:'🇺🇸', name:'EN',    label:'English'    },
+  { code:'pt', flag:'🇧🇷', name:'PT-BR', label:'Português'  },
+  { code:'es', flag:'🇲🇽', name:'ES',    label:'Español'    },
+  { code:'ph', flag:'🇵🇭', name:'PH',    label:'Filipino'   },
+  { code:'id', flag:'🇮🇩', name:'ID',    label:'Indonesia'  },
+  { code:'tr', flag:'🇹🇷', name:'TR',    label:'Türkçe'     },
+  { code:'de', flag:'🇩🇪', name:'DE',    label:'Deutsch'    },
+  { code:'fr', flag:'🇫🇷', name:'FR',    label:'Français'   },
+  { code:'pl', flag:'🇵🇱', name:'PL',    label:'Polski'     },
+  { code:'ru', flag:'🇷🇺', name:'RU',    label:'Русский'    },
+  { code:'ar', flag:'🇸🇦', name:'AR',    label:'العربية'    },
+  { code:'ja', flag:'🇯🇵', name:'JA',    label:'日本語'      },
+  { code:'it', flag:'🇮🇹', name:'IT',    label:'Italiano'   },
+  { code:'ko', flag:'🇰🇷', name:'KO',    label:'한국어'      },
+  { code:'nl', flag:'🇳🇱', name:'NL',    label:'Nederlands' },
+];
+
+const T = {
+  en: { tab_gen:'⚔ Generate Code', tab_dec:'🔍 Decode Code', add_move:'+ Add Move', generate:'Generate Code', generating:'⚡ Generating...', copy:'⎘ Copy Code', copied:'✓ Copied!', result_label:'Your JJS Import Code — paste in Skill Builder', move_name:'Move Name', slot_type:'Slot Type', damage:'Damage', stun:'Stun (sec)', cooldown:'Cooldown (sec)', attack_type:'Attack Type', knockback:'Knockback Force', duration:'Duration (sec)', decode_title:'🔍 Paste a JJS import code to inspect it', decode_placeholder:'Paste base64 code here...', decode_btn:'Decode', no_move:'Add at least one move first', preview:'Preview:', slots_gen:'slot(s) generated', remove:'✕ Remove', tagline:'Jujutsu Shenanigans — Custom Skill Builder' },
+  pt: { tab_gen:'⚔ Gerar Código', tab_dec:'🔍 Decodificar', add_move:'+ Adicionar Movimento', generate:'Gerar Código', generating:'⚡ Gerando...', copy:'⎘ Copiar Código', copied:'✓ Copiado!', result_label:'Seu Código JJS — cole no Skill Builder', move_name:'Nome do Movimento', slot_type:'Tipo de Slot', damage:'Dano', stun:'Atordoamento (s)', cooldown:'Recarga (s)', attack_type:'Tipo de Ataque', knockback:'Força de Recuo', duration:'Duração (s)', decode_title:'🔍 Cole um código JJS para inspecionar', decode_placeholder:'Cole o código base64 aqui...', decode_btn:'Decodificar', no_move:'Adicione pelo menos um movimento', preview:'Prévia:', slots_gen:'slot(s) gerado(s)', remove:'✕ Remover', tagline:'Jujutsu Shenanigans — Criador de Habilidades' },
+  es: { tab_gen:'⚔ Generar Código', tab_dec:'🔍 Decodificar', add_move:'+ Añadir Movimiento', generate:'Generar Código', generating:'⚡ Generando...', copy:'⎘ Copiar Código', copied:'✓ Copiado!', result_label:'Tu Código JJS — pégalo en Skill Builder', move_name:'Nombre del Movimiento', slot_type:'Tipo de Slot', damage:'Daño', stun:'Aturdimiento (s)', cooldown:'Enfriamiento (s)', attack_type:'Tipo de Ataque', knockback:'Fuerza de Retroceso', duration:'Duración (s)', decode_title:'🔍 Pega un código JJS para inspeccionarlo', decode_placeholder:'Pega el código base64 aquí...', decode_btn:'Decodificar', no_move:'Añade al menos un movimiento', preview:'Vista previa:', slots_gen:'slot(s) generado(s)', remove:'✕ Eliminar', tagline:'Jujutsu Shenanigans — Constructor de Habilidades' },
+  ph: { tab_gen:'⚔ Gumawa ng Code', tab_dec:'🔍 I-decode', add_move:'+ Magdagdag ng Galaw', generate:'Gumawa ng Code', generating:'⚡ Ginagawa...', copy:'⎘ Kopyahin', copied:'✓ Nakopya!', result_label:'Ang Iyong JJS Code — i-paste sa Skill Builder', move_name:'Pangalan ng Galaw', slot_type:'Uri ng Slot', damage:'Pinsala', stun:'Stun (s)', cooldown:'Cooldown (s)', attack_type:'Uri ng Atake', knockback:'Lakas ng Knockback', duration:'Tagal (s)', decode_title:'🔍 I-paste ang JJS code para suriin', decode_placeholder:'I-paste ang base64 code dito...', decode_btn:'I-decode', no_move:'Magdagdag ng kahit isang galaw', preview:'Preview:', slots_gen:'slot(s) nagawa', remove:'✕ Alisin', tagline:'Jujutsu Shenanigans — Skill Builder' },
+  id: { tab_gen:'⚔ Buat Kode', tab_dec:'🔍 Dekode', add_move:'+ Tambah Gerakan', generate:'Buat Kode', generating:'⚡ Membuat...', copy:'⎘ Salin Kode', copied:'✓ Tersalin!', result_label:'Kode JJS Kamu — tempel di Skill Builder', move_name:'Nama Gerakan', slot_type:'Tipe Slot', damage:'Kerusakan', stun:'Stun (s)', cooldown:'Cooldown (s)', attack_type:'Tipe Serangan', knockback:'Kekuatan Knockback', duration:'Durasi (s)', decode_title:'🔍 Tempel kode JJS untuk diperiksa', decode_placeholder:'Tempel kode base64 di sini...', decode_btn:'Dekode', no_move:'Tambahkan setidaknya satu gerakan', preview:'Pratinjau:', slots_gen:'slot dibuat', remove:'✕ Hapus', tagline:'Jujutsu Shenanigans — Pembuat Skill' },
+  tr: { tab_gen:'⚔ Kod Üret', tab_dec:'🔍 Kodu Çöz', add_move:'+ Hareket Ekle', generate:'Kod Üret', generating:'⚡ Üretiliyor...', copy:'⎘ Kodu Kopyala', copied:'✓ Kopyalandı!', result_label:'JJS Kodunuz — Skill Builder\'a yapıştırın', move_name:'Hareket Adı', slot_type:'Slot Türü', damage:'Hasar', stun:'Sersemletme (s)', cooldown:'Bekleme Süresi (s)', attack_type:'Saldırı Türü', knockback:'Geri İtme Gücü', duration:'Süre (s)', decode_title:'🔍 JJS kodunu incelemek için yapıştırın', decode_placeholder:'Base64 kodunu buraya yapıştırın...', decode_btn:'Çöz', no_move:'En az bir hareket ekleyin', preview:'Önizleme:', slots_gen:'slot oluşturuldu', remove:'✕ Kaldır', tagline:'Jujutsu Shenanigans — Özel Beceri Oluşturucu' },
+  de: { tab_gen:'⚔ Code Erstellen', tab_dec:'🔍 Code Entschlüsseln', add_move:'+ Bewegung Hinzufügen', generate:'Code Erstellen', generating:'⚡ Erstelle...', copy:'⎘ Code Kopieren', copied:'✓ Kopiert!', result_label:'Dein JJS Code — im Skill Builder einfügen', move_name:'Bewegungsname', slot_type:'Slot-Typ', damage:'Schaden', stun:'Betäubung (s)', cooldown:'Abklingzeit (s)', attack_type:'Angriffstyp', knockback:'Rückstoßkraft', duration:'Dauer (s)', decode_title:'🔍 JJS Code zum Prüfen einfügen', decode_placeholder:'Base64-Code hier einfügen...', decode_btn:'Entschlüsseln', no_move:'Mindestens eine Bewegung hinzufügen', preview:'Vorschau:', slots_gen:'Slot(s) erstellt', remove:'✕ Entfernen', tagline:'Jujutsu Shenanigans — Skill Builder' },
+  fr: { tab_gen:'⚔ Générer Code', tab_dec:'🔍 Décoder', add_move:'+ Ajouter Mouvement', generate:'Générer le Code', generating:'⚡ Génération...', copy:'⎘ Copier le Code', copied:'✓ Copié!', result_label:'Votre Code JJS — collez dans le Skill Builder', move_name:'Nom du Mouvement', slot_type:'Type de Slot', damage:'Dégâts', stun:'Étourdissement (s)', cooldown:'Recharge (s)', attack_type:'Type d\'Attaque', knockback:'Force de Recul', duration:'Durée (s)', decode_title:'🔍 Collez un code JJS pour l\'inspecter', decode_placeholder:'Collez le code base64 ici...', decode_btn:'Décoder', no_move:'Ajoutez au moins un mouvement', preview:'Aperçu:', slots_gen:'slot(s) généré(s)', remove:'✕ Supprimer', tagline:'Jujutsu Shenanigans — Créateur de Compétences' },
+  pl: { tab_gen:'⚔ Generuj Kod', tab_dec:'🔍 Dekoduj', add_move:'+ Dodaj Ruch', generate:'Generuj Kod', generating:'⚡ Generowanie...', copy:'⎘ Kopiuj Kod', copied:'✓ Skopiowano!', result_label:'Twój Kod JJS — wklej w Skill Builder', move_name:'Nazwa Ruchu', slot_type:'Typ Slotu', damage:'Obrażenia', stun:'Ogłuszenie (s)', cooldown:'Czas Odnowienia (s)', attack_type:'Typ Ataku', knockback:'Siła Odrzutu', duration:'Czas Trwania (s)', decode_title:'🔍 Wklej kod JJS, aby go sprawdzić', decode_placeholder:'Wklej kod base64 tutaj...', decode_btn:'Dekoduj', no_move:'Dodaj co najmniej jeden ruch', preview:'Podgląd:', slots_gen:'slot(ów) wygenerowano', remove:'✕ Usuń', tagline:'Jujutsu Shenanigans — Kreator Umiejętności' },
+  ru: { tab_gen:'⚔ Создать Код', tab_dec:'🔍 Декодировать', add_move:'+ Добавить Удар', generate:'Создать Код', generating:'⚡ Создание...', copy:'⎘ Скопировать', copied:'✓ Скопировано!', result_label:'Ваш JJS Код — вставьте в Skill Builder', move_name:'Название Удара', slot_type:'Тип Слота', damage:'Урон', stun:'Оглушение (с)', cooldown:'Перезарядка (с)', attack_type:'Тип Атаки', knockback:'Сила Отбрасывания', duration:'Длительность (с)', decode_title:'🔍 Вставьте JJS код для проверки', decode_placeholder:'Вставьте base64 код сюда...', decode_btn:'Декодировать', no_move:'Добавьте хотя бы один удар', preview:'Предпросмотр:', slots_gen:'слот(а/ов) создано', remove:'✕ Удалить', tagline:'Jujutsu Shenanigans — Конструктор Скиллов' },
+  ar: { tab_gen:'⚔ إنشاء رمز', tab_dec:'🔍 فك الرمز', add_move:'+ إضافة حركة', generate:'إنشاء الرمز', generating:'⚡ جارٍ الإنشاء...', copy:'⎘ نسخ الرمز', copied:'✓ تم النسخ!', result_label:'رمز JJS الخاص بك — الصقه في منشئ المهارات', move_name:'اسم الحركة', slot_type:'نوع الفتحة', damage:'الضرر', stun:'الصعق (ث)', cooldown:'وقت التهدئة (ث)', attack_type:'نوع الهجوم', knockback:'قوة الارتداد', duration:'المدة (ث)', decode_title:'🔍 الصق رمز JJS لفحصه', decode_placeholder:'الصق رمز base64 هنا...', decode_btn:'فك الرمز', no_move:'أضف حركة واحدة على الأقل', preview:'معاينة:', slots_gen:'فتحة (فتحات) تم إنشاؤها', remove:'✕ إزالة', tagline:'Jujutsu Shenanigans — منشئ المهارات' },
+  ja: { tab_gen:'⚔ コード生成', tab_dec:'🔍 デコード', add_move:'+ 技を追加', generate:'コードを生成', generating:'⚡ 生成中...', copy:'⎘ コードをコピー', copied:'✓ コピーしました!', result_label:'JJSコード — スキルビルダーに貼り付けてください', move_name:'技名', slot_type:'スロットタイプ', damage:'ダメージ', stun:'スタン (秒)', cooldown:'クールダウン (秒)', attack_type:'攻撃タイプ', knockback:'ノックバック力', duration:'持続時間 (秒)', decode_title:'🔍 JJSコードを貼り付けて確認', decode_placeholder:'base64コードをここに貼り付け...', decode_btn:'デコード', no_move:'少なくとも1つの技を追加してください', preview:'プレビュー:', slots_gen:'スロット生成完了', remove:'✕ 削除', tagline:'Jujutsu Shenanigans — スキルビルダー' },
+  it: { tab_gen:'⚔ Genera Codice', tab_dec:'🔍 Decodifica', add_move:'+ Aggiungi Mossa', generate:'Genera Codice', generating:'⚡ Generando...', copy:'⎘ Copia Codice', copied:'✓ Copiato!', result_label:'Il tuo Codice JJS — incollalo nello Skill Builder', move_name:'Nome della Mossa', slot_type:'Tipo di Slot', damage:'Danno', stun:'Stordimento (s)', cooldown:'Ricarica (s)', attack_type:'Tipo di Attacco', knockback:'Forza di Respinta', duration:'Durata (s)', decode_title:'🔍 Incolla un codice JJS per ispezionarlo', decode_placeholder:'Incolla il codice base64 qui...', decode_btn:'Decodifica', no_move:'Aggiungi almeno una mossa', preview:'Anteprima:', slots_gen:'slot generati', remove:'✕ Rimuovi', tagline:'Jujutsu Shenanigans — Creatore di Abilità' },
+  ko: { tab_gen:'⚔ 코드 생성', tab_dec:'🔍 디코드', add_move:'+ 기술 추가', generate:'코드 생성', generating:'⚡ 생성 중...', copy:'⎘ 코드 복사', copied:'✓ 복사됨!', result_label:'JJS 코드 — 스킬 빌더에 붙여넣기', move_name:'기술 이름', slot_type:'슬롯 유형', damage:'데미지', stun:'스턴 (초)', cooldown:'재사용 대기시간 (초)', attack_type:'공격 유형', knockback:'넉백 힘', duration:'지속 시간 (초)', decode_title:'🔍 JJS 코드를 붙여넣어 검사', decode_placeholder:'여기에 base64 코드 붙여넣기...', decode_btn:'디코드', no_move:'기술을 하나 이상 추가하세요', preview:'미리보기:', slots_gen:'슬롯 생성됨', remove:'✕ 제거', tagline:'Jujutsu Shenanigans — 스킬 빌더' },
+  nl: { tab_gen:'⚔ Code Genereren', tab_dec:'🔍 Decoderen', add_move:'+ Beweging Toevoegen', generate:'Code Genereren', generating:'⚡ Genereren...', copy:'⎘ Code Kopiëren', copied:'✓ Gekopieerd!', result_label:'Jouw JJS Code — plak in de Skill Builder', move_name:'Naam van Beweging', slot_type:'Slot Type', damage:'Schade', stun:'Verdoving (s)', cooldown:'Laadtijd (s)', attack_type:'Aanvalstype', knockback:'Terugstootkracht', duration:'Duur (s)', decode_title:'🔍 Plak een JJS code om te inspecteren', decode_placeholder:'Plak base64 code hier...', decode_btn:'Decoderen', no_move:'Voeg minstens één beweging toe', preview:'Voorbeeld:', slots_gen:'slot(s) gegenereerd', remove:'✕ Verwijderen', tagline:'Jujutsu Shenanigans — Vaardigheidsmaker' },
+};
+
+let currentLang = localStorage.getItem('jjs_lang') || 'en';
+
+function buildLangDropdown() {
+  const dd = document.getElementById('lang-dropdown');
+  dd.innerHTML = LANGS.map(l => `
+    <div class="lang-option ${l.code===currentLang?'active':''}" onclick="setLang('${l.code}')">
+      <span class="lang-flag">${l.flag}</span>
+      <span>${l.label}</span>
+    </div>
+  `).join('');
+}
+
+function toggleLangDropdown() {
+  const dd = document.getElementById('lang-dropdown');
+  dd.classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.lang-selector')) {
+    document.getElementById('lang-dropdown')?.classList.remove('open');
+  }
+});
+
+function setLang(code) {
+  currentLang = code;
+  localStorage.setItem('jjs_lang', code);
+  const l = LANGS.find(x => x.code === code);
+  document.getElementById('lang-flag-current').textContent = l.flag;
+  document.getElementById('lang-name-current').textContent = l.name;
+  document.getElementById('lang-dropdown').classList.remove('open');
+  buildLangDropdown();
+  applyLang();
+}
+
+function t(key) { return (T[currentLang] || T.en)[key] || T.en[key] || key; }
+
+function applyLang() {
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[0]) tabs[0].innerHTML = t('tab_gen');
+  if (tabs[1]) tabs[1].innerHTML = t('tab_dec');
+  const addBtn = document.querySelector('.btn-add');
+  if (addBtn) addBtn.textContent = t('add_move');
+  const genBtn = document.querySelector('.btn-generate');
+  if (genBtn && !genBtn.disabled) genBtn.textContent = t('generate');
+  const rl = document.querySelector('.result-label');
+  if (rl) rl.innerHTML = `<span style="width:6px;height:6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan);display:inline-block;flex-shrink:0"></span>${t('result_label')}`;
+  const copyBtn = document.getElementById('copy-btn');
+  if (copyBtn && !copyBtn.classList.contains('copied')) copyBtn.textContent = t('copy');
+  document.querySelector('header p').textContent = t('tagline');
+  // Re-render all move cards labels
+  for (let i = 1; i <= moveCount; i++) {
+    const el = document.getElementById(`move-${i}`);
+    if (!el) continue;
+    const labels = el.querySelectorAll('label');
+    const keys = ['move_name','slot_type','damage','stun','cooldown','attack_type','knockback','duration'];
+    labels.forEach((lb,idx) => { if (keys[idx]) lb.textContent = t(keys[idx]); });
+    const removeBtns = el.querySelectorAll('.btn-danger');
+    removeBtns.forEach(b => b.textContent = t('remove'));
+  }
+}
+
+// Init
+buildLangDropdown();
+const initLang = LANGS.find(l => l.code === currentLang);
+if (initLang) {
+  document.getElementById('lang-flag-current').textContent = initLang.flag;
+  document.getElementById('lang-name-current').textContent = initLang.name;
+}
+applyLang();
+
 addMove();
 </script>
 </body>
