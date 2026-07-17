@@ -1461,6 +1461,27 @@ function soundClick() {
   playTone(600, 'square', 0.05, 0.08, true);
 }
 
+let _tickTimer = null;
+function soundTick() {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(720, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(680, ctx.currentTime + 0.07);
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.038, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
+  } catch(e) {}
+}
+function debouncedTick() {
+  clearTimeout(_tickTimer);
+  _tickTimer = setTimeout(soundTick, 60);
+}
+
 function soundGenerate() {
   // Rising energy burst
   try {
@@ -1537,8 +1558,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Live preview — update on any input change in moves list
-  document.getElementById('moves-list').addEventListener('input', updateLivePreview);
-  document.getElementById('moves-list').addEventListener('change', updateLivePreview);
+  document.getElementById('moves-list').addEventListener('input', () => { updateLivePreview(); debouncedTick(); });
+  document.getElementById('moves-list').addEventListener('change', () => { updateLivePreview(); debouncedTick(); });
 
   // Global click sounds for all interactive elements
   document.addEventListener('click', e => {
