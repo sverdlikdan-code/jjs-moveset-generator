@@ -1082,6 +1082,43 @@ async function submitComment() {
   }
 }
 
+// ── SOUNDS ──
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudio() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+function playTone(freq, type, duration, gainVal, fadeOut) {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+    if (fadeOut) gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function soundClick()  { playTone(600, 'square', 0.05, 0.08, true); }
+function soundLike()   { playTone(660, 'sine', 0.1, 0.12, true); setTimeout(() => playTone(880, 'sine', 0.08, 0.1, true), 60); }
+function soundCopy()   { playTone(880, 'sine', 0.08, 0.1, true); setTimeout(() => playTone(1100, 'sine', 0.08, 0.1, true), 70); }
+function soundOpen()   { playTone(300, 'sine', 0.12, 0.12, true); setTimeout(() => playTone(500, 'sine', 0.12, 0.1, true), 60); }
+function soundPost()   { playTone(440, 'sine', 0.1, 0.12, true); setTimeout(() => playTone(660, 'sine', 0.1, 0.1, true), 80); setTimeout(() => playTone(880, 'sine', 0.08, 0.1, true), 160); }
+
+// Global click sounds
+document.addEventListener('click', e => {
+  const el = e.target.closest('button, .sort-btn, .code-card');
+  if (!el) return;
+  if (el.classList.contains('btn-like')) { soundLike(); return; }
+  if (el.classList.contains('btn-copy-card') || el.id === 'modal-copy-btn') { soundCopy(); return; }
+  if (el.classList.contains('code-card')) { soundOpen(); return; }
+  if (el.classList.contains('btn-comment-submit')) { soundPost(); return; }
+  soundClick();
+});
+
 loadLibrary('likes');
 </script>
 </body>
