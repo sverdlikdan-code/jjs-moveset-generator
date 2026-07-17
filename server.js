@@ -91,11 +91,13 @@ function buildSlot(input) {
           SIZE: '8, 8, 8',
           DAMAGE: Number(input.damage) || 20,
           STUN: Number(input.stun) || 0.5,
-          'ATTACK TYPE': input.attackType || 'Normal'
+          'ATTACK TYPE': input.attackType || 'Normal',
+          BLOCKABLE: input.blockable !== false
         },
         {
           K_NAME: 'VELO',
           FORCE: Number(input.force) || 50,
+          Y: Number(input.forceY) || 0,
           TIME: 0.3,
           FADE: true,
           TRACK: false,

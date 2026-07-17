@@ -746,9 +746,36 @@ select {
 }
 
 /* decode panel legacy */
-.move-preview {
-  margin-top: 16px;
+.move-preview { margin-top: 16px; }
+
+/* new fields */
+.grid2-extra {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 0;
 }
+.blockable-wrap { display: flex; flex-direction: column; gap: 8px; }
+.toggle-switch { position: relative; display: inline-block; cursor: pointer; }
+.toggle-switch input { display: none; }
+.toggle-track {
+  display: flex; align-items: center;
+  width: 44px; height: 24px;
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1px solid rgba(124,58,237,0.3);
+  transition: background 0.2s; padding: 3px;
+}
+.toggle-switch input:checked + .toggle-track { background: rgba(124,58,237,0.4); border-color: rgba(124,58,237,0.6); }
+.toggle-thumb { width: 18px; height: 18px; border-radius: 50%; background: #64748b; transition: transform 0.2s, background 0.2s; }
+.toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(20px); background: #7c3aed; }
+
+/* live card footer chips */
+.live-card-footer { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
+.live-chip { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.8px; padding: 2px 8px; border-radius: 8px; }
+.live-chip.block    { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.25); }
+.live-chip.unblock  { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+.live-chip.launch   { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
 #decode-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1006,7 +1033,7 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
 <script>
 let moveCount = 0;
 
-const SLOT_TYPES    = ['SKILL','MELEE','SPECIAL','CHASE','AWAKENING'];
+const SLOT_TYPES    = ['SKILL','MELEE','SPECIAL','CHASE','AWAKENING','EVASIVE'];
 const ATTACK_TYPES  = ['Normal','Heavy','Unblockable','Grab'];
 
 function slotBadgeHtml(id) {
@@ -1052,7 +1079,7 @@ function addMove() {
         <input type="number" id="cooldown-${id}" value="5" min="0">
       </div>
     </div>
-    <div class="grid3">
+    <div class="grid3" style="margin-bottom:12px;">
       <div>
         <label>Attack Type</label>
         <select id="attackType-${id}">
@@ -1060,12 +1087,25 @@ function addMove() {
         </select>
       </div>
       <div>
-        <label>Knockback Force</label>
+        <label>Force Z (Forward)</label>
         <input type="number" id="force-${id}" value="50" min="0" max="999">
       </div>
       <div>
         <label>Duration (sec)</label>
         <input type="number" id="duration-${id}" value="0.5" step="0.1" min="0.1">
+      </div>
+    </div>
+    <div class="grid2-extra">
+      <div>
+        <label>Force Y (Launch ↑)</label>
+        <input type="number" id="forceY-${id}" value="0" min="-999" max="999">
+      </div>
+      <div class="blockable-wrap">
+        <label>Blockable</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="blockable-${id}" checked onchange="updateLivePreview()">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
       </div>
     </div>
   `;
@@ -1099,6 +1139,8 @@ function getMoveData() {
       cooldown:   document.getElementById(`cooldown-${i}`)?.value,
       attackType: document.getElementById(`attackType-${i}`)?.value,
       force:      document.getElementById(`force-${i}`)?.value,
+      forceY:     document.getElementById(`forceY-${i}`)?.value,
+      blockable:  document.getElementById(`blockable-${i}`)?.checked,
       duration:   document.getElementById(`duration-${i}`)?.value,
     });
   }
@@ -1274,6 +1316,7 @@ const SLOT_META = {
   SPECIAL:   { g:'linear-gradient(135deg,#2e1065,#6d28d9)', accent:'#c084fc', glow:'rgba(192,132,252,0.45)', border:'rgba(192,132,252,0.3)', symbol:'✦' },
   CHASE:     { g:'linear-gradient(135deg,#052e16,#166534)', accent:'#4ade80', glow:'rgba(74,222,128,0.45)',  border:'rgba(74,222,128,0.3)',  symbol:'➤' },
   AWAKENING: { g:'linear-gradient(135deg,#451a03,#b45309)', accent:'#fbbf24', glow:'rgba(251,191,36,0.45)',  border:'rgba(251,191,36,0.3)',  symbol:'★' },
+  EVASIVE:   { g:'linear-gradient(135deg,#0c2340,#0e7490)', accent:'#22d3ee', glow:'rgba(34,211,238,0.45)',  border:'rgba(34,211,238,0.3)',  symbol:'↩' },
 };
 const DEFAULT_META = { g:'linear-gradient(135deg,#1a0a2e,#2d1557)', accent:'#c084fc', glow:'rgba(192,132,252,0.35)', border:'rgba(124,58,237,0.3)', symbol:'⚡' };
 
@@ -1314,10 +1357,14 @@ function updateLivePreview() {
             <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.cooldown||0)/20*100).toFixed(1)}"></div></div>
           </div>
           <div class="live-stat">
-            <span class="live-stat-label">FORCE</span>
+            <span class="live-stat-label">FORCE Z</span>
             <span class="live-stat-value">${m.force || 0}</span>
             <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.force||0)/200*100).toFixed(1)}"></div></div>
           </div>
+        </div>
+        <div class="live-card-footer">
+          ${Number(m.forceY) ? `<span class="live-chip launch">↑ Y:${m.forceY}</span>` : ''}
+          <span class="live-chip ${m.blockable !== false ? 'block' : 'unblock'}">${m.blockable !== false ? 'BLOCKABLE' : 'UNBLOCKABLE'}</span>
         </div>
       </div>
     </div>`;
@@ -1347,7 +1394,7 @@ function updateLivePreview() {
   });
 }
 
-const ALLOWED_TYPES = new Set(['SKILL','MELEE','SPECIAL','CHASE','AWAKENING']);
+const ALLOWED_TYPES = new Set(['SKILL','MELEE','SPECIAL','CHASE','AWAKENING','EVASIVE']);
 
 // ── MOVE PREVIEW (anime cards for decode) ──
 function renderSlotCards(slots, containerId) {
@@ -1356,15 +1403,17 @@ function renderSlotCards(slots, containerId) {
     const rawType = String(slot.K_NAME || '').toUpperCase();
     const type = ALLOWED_TYPES.has(rawType) ? rawType : 'SKILL';
     const meta = SLOT_META[type] || DEFAULT_META;
-    let dmg = '—', stun = '—', force = '—';
+    let dmg = '—', stun = '—', force = '—', forceY = 0, blockable = null;
     try {
       const parsed = JSON.parse(slot.DATA);
       const hitbox = parsed.Line.find(l => l.K_NAME === 'HITBOX');
       const velo   = parsed.Line.find(l => l.K_NAME === 'VELO');
-      if (hitbox) { dmg = escHtml(String(hitbox.DAMAGE ?? '—')); stun = escHtml(String(hitbox.STUN ?? '—')); }
-      if (velo)   { force = escHtml(String(velo.FORCE ?? '—')); }
+      if (hitbox) { dmg = escHtml(String(hitbox.DAMAGE ?? '—')); stun = escHtml(String(hitbox.STUN ?? '—')); blockable = hitbox.BLOCKABLE; }
+      if (velo)   { force = escHtml(String(velo.FORCE ?? '—')); forceY = velo.Y || 0; }
     } catch(e) {}
     const cooldown = escHtml(String(slot.COOLDOWN ?? '—'));
+    const blockChip = blockable === null ? '' : `<span class="live-chip ${blockable ? 'block' : 'unblock'}">${blockable ? 'BLOCKABLE' : 'UNBLOCKABLE'}</span>`;
+    const launchChip = forceY ? `<span class="live-chip launch">↑ Y:${forceY}</span>` : '';
     return `<div class="live-card" style="--c-glow:${meta.glow};--c-border:${meta.border};--c-accent:${meta.accent}">
       <div class="live-card-header" style="background:${meta.g}" data-symbol="${meta.symbol}">
         <span class="live-card-type">${type}</span>
@@ -1386,10 +1435,11 @@ function renderSlotCards(slots, containerId) {
             <span class="live-stat-value">${cooldown}s</span>
           </div>
           <div class="live-stat">
-            <span class="live-stat-label">FORCE</span>
+            <span class="live-stat-label">FORCE Z</span>
             <span class="live-stat-value">${force}</span>
           </div>
         </div>
+        <div class="live-card-footer">${launchChip}${blockChip}</div>
       </div>
     </div>`;
   }).join('');
