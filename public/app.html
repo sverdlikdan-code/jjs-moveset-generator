@@ -748,9 +748,14 @@ select {
 /* decode panel legacy */
 .move-preview {
   margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+}
+#decode-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  #decode-cards { grid-template-columns: 1fr; }
 }
 .preview-label {
   font-size: 0.65rem;
