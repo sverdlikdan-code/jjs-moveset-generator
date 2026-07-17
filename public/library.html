@@ -506,6 +506,127 @@ header::after {
   .codes-grid { grid-template-columns: 1fr; }
   .logo h1 { font-size: 1.1rem; }
 }
+
+/* ── CHARACTER AVATAR CARD ── */
+.char-avatar {
+  width: 100%;
+  height: 72px;
+  border-radius: 10px 10px 0 0;
+  margin: -20px -20px 14px -20px;
+  width: calc(100% + 40px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  position: relative;
+  overflow: hidden;
+}
+.char-avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, transparent 50%, rgba(0,0,0,0.3) 100%);
+}
+.char-kanji {
+  font-size: 3rem;
+  font-weight: 900;
+  opacity: 0.2;
+  font-family: serif;
+  line-height: 1;
+  z-index: 1;
+  color: #fff;
+  letter-spacing: -2px;
+}
+.char-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.9);
+  z-index: 1;
+  text-align: right;
+  max-width: 150px;
+  line-height: 1.3;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* Modal avatar (taller) */
+.char-avatar-modal {
+  height: 90px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: relative;
+  overflow: hidden;
+}
+.char-avatar-modal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.45) 0%, transparent 60%);
+}
+.char-avatar-modal .char-kanji { font-size: 3.8rem; }
+.char-avatar-modal .char-label { font-size: 0.8rem; }
+
+/* ── COMMENTS ── */
+.comments-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(124,58,237,0.15);
+}
+.comments-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.comment-item {
+  background: rgba(124,58,237,0.05);
+  border: 1px solid rgba(124,58,237,0.1);
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin-bottom: 7px;
+  animation: fadeSlideIn 0.2s ease;
+}
+.comment-author { font-size: 0.72rem; color: var(--accent-light); font-weight: 600; margin-bottom: 3px; }
+.comment-text { font-size: 0.82rem; color: var(--text); line-height: 1.45; }
+.comment-meta { font-size: 0.67rem; color: var(--text-dim); margin-top: 5px; display: flex; align-items: center; gap: 10px; }
+.comment-like-btn {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 0.67rem; cursor: pointer; padding: 0; transition: color 0.15s;
+}
+.comment-like-btn:hover { color: var(--red); }
+.comment-like-btn.liked { color: var(--red); }
+.comment-form { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+.comment-input {
+  width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 0.83rem;
+  outline: none; transition: border-color 0.2s; font-family: inherit; resize: none;
+}
+.comment-input:focus { border-color: var(--accent); box-shadow: 0 0 8px rgba(124,58,237,0.2); }
+.comment-name-input {
+  flex: 1; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 10px; color: var(--text); font-size: 0.78rem;
+  outline: none; transition: border-color 0.2s; font-family: inherit;
+}
+.comment-name-input:focus { border-color: var(--accent); }
+.comment-submit-row { display: flex; gap: 8px; align-items: center; }
+.btn-comment-submit {
+  padding: 7px 16px; background: rgba(124,58,237,0.2);
+  border: 1px solid rgba(124,58,237,0.4); border-radius: 8px;
+  color: var(--accent-light); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-comment-submit:hover { background: rgba(124,58,237,0.35); border-color: var(--accent); }
+.comments-loader { text-align: center; color: var(--text-dim); font-size: 0.75rem; padding: 10px; }
+.no-comments { text-align: center; color: var(--text-dim); font-size: 0.75rem; padding: 10px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -556,13 +677,27 @@ header::after {
 
 <!-- Code detail modal -->
 <div class="modal-overlay" id="code-modal">
-  <div class="modal">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;max-width:560px">
+    <div id="modal-char-avatar" class="char-avatar-modal"></div>
     <div class="modal-title" id="modal-name">—</div>
     <div class="modal-char" id="modal-char">—</div>
     <div class="modal-code" id="modal-code">—</div>
     <div class="modal-actions">
       <button class="btn-modal-copy" id="modal-copy-btn" onclick="copyModalCode()">⎘ Copy Code</button>
       <button class="btn-modal-close" onclick="closeModal()">Close</button>
+    </div>
+    <!-- Comments -->
+    <div class="comments-section">
+      <div class="comments-title">💬 COMMENTS <span id="comment-count" style="color:var(--text-dim);font-weight:400;font-size:0.8rem"></span></div>
+      <div id="comments-list"><div class="comments-loader">Loading...</div></div>
+      <div class="comment-form">
+        <textarea class="comment-input" id="comment-text" placeholder="Share your thoughts on this build..." rows="2"></textarea>
+        <div class="comment-submit-row">
+          <input class="comment-name-input" id="comment-author-input" type="text" placeholder="Your name (optional)" maxlength="40" />
+          <button class="btn-comment-submit" onclick="submitComment()">Post ⚡</button>
+        </div>
+        <div id="comment-error" style="font-size:0.72rem;color:var(--red);min-height:14px;margin-top:4px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -653,14 +788,19 @@ function renderCodes(codes, sort) {
     return;
   }
 
-  grid.innerHTML = codes.map((c, i) => `
+  grid.innerHTML = codes.map((c, i) => {
+    const theme = getCharTheme(c.character);
+    return `
     <div class="code-card" onclick="openCode('${c.id}')">
+      <div class="char-avatar" style="background:${theme.g}">
+        <span class="char-kanji">${theme.kanji}</span>
+        <span class="char-label">${escHtml(c.character)}</span>
+      </div>
       <div class="card-header">
         <div>
           <div class="card-name">${escHtml(c.name)}</div>
-          <div class="card-char">${escHtml(c.character)}</div>
         </div>
-        <div class="card-rank">#${i + 1}</div>
+        <div class="card-rank" style="color:${theme.color}">#${i + 1}</div>
       </div>
       ${c.tags && c.tags.length ? `<div class="card-tags">${c.tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
       <div class="card-meta">by ${escHtml(c.author || 'Anonymous')} · ${timeAgo(c.created_at)}</div>
@@ -677,7 +817,7 @@ function renderCodes(codes, sort) {
         </div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 async function openCode(id) {
@@ -685,6 +825,9 @@ async function openCode(id) {
   document.getElementById('modal-name').textContent = '...';
   document.getElementById('modal-char').textContent = '';
   document.getElementById('modal-code').textContent = 'Loading...';
+  document.getElementById('modal-char-avatar').innerHTML = '';
+  document.getElementById('comments-list').innerHTML = '<div class="comments-loader">Loading...</div>';
+  document.getElementById('comment-count').textContent = '';
   modal.classList.add('open');
 
   try {
@@ -694,6 +837,15 @@ async function openCode(id) {
     document.getElementById('modal-char').textContent = data.character + (data.author ? ' · by ' + data.author : '');
     document.getElementById('modal-code').textContent = data.code;
     currentModal = data;
+
+    // Character avatar in modal
+    const theme = getCharTheme(data.character);
+    const av = document.getElementById('modal-char-avatar');
+    av.style.background = theme.g;
+    av.innerHTML = `<span class="char-kanji" style="font-size:4rem">${theme.kanji}</span><span class="char-label" style="font-size:0.9rem">${escHtml(data.character)}</span>`;
+
+    // Load comments
+    loadComments(id);
   } catch(e) {
     document.getElementById('modal-code').textContent = 'Error loading code';
   }
@@ -803,6 +955,131 @@ function timeAgo(ts) {
   const h = Math.floor(m / 60);
   if (h < 24) return h + 'h ago';
   return Math.floor(h / 24) + 'd ago';
+}
+
+// ── CHARACTER THEME MAP ──────────────────────────────────────────
+const CHAR_THEMES = {
+  'honored one (gojo)':          { g:'linear-gradient(135deg,#0f3460 0%,#1a6fbf 100%)', kanji:'∞', color:'#60a5fa' },
+  'vessel (sukuna)':             { g:'linear-gradient(135deg,#450a0a 0%,#991b1b 100%)', kanji:'呪', color:'#f87171' },
+  'restless gambler (hakari)':   { g:'linear-gradient(135deg,#451a03 0%,#b45309 100%)', kanji:'♠', color:'#fbbf24' },
+  'ten shadows (megumi)':        { g:'linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%)', kanji:'影', color:'#93c5fd' },
+  'mahoraga':                    { g:'linear-gradient(135deg,#111827 0%,#374151 100%)', kanji:'⚙', color:'#d1d5db' },
+  'perfection (mahito)':         { g:'linear-gradient(135deg,#1c1917 0%,#44403c 100%)', kanji:'魂', color:'#a8a29e' },
+  'blood manipulator (choso)':   { g:'linear-gradient(135deg,#450a0a 0%,#7f1d1d 100%)', kanji:'血', color:'#fca5a5' },
+  'switcher (aoi todo)':         { g:'linear-gradient(135deg,#052e16 0%,#166534 100%)', kanji:'✦', color:'#4ade80' },
+  'defense attorney (higuruma)': { g:'linear-gradient(135deg,#2e1065 0%,#4c1d95 100%)', kanji:'⚖', color:'#a78bfa' },
+  'cursed partners (yuta)':      { g:'linear-gradient(135deg,#082f49 0%,#0c4a6e 100%)', kanji:'愛', color:'#7dd3fc' },
+  'puppet master (mechamaru)':   { g:'linear-gradient(135deg,#0c1a2e 0%,#1e3a5f 100%)', kanji:'⚡', color:'#bfdbfe' },
+  'head of the hei (naoya)':     { g:'linear-gradient(135deg,#451a03 0%,#a16207 100%)', kanji:'速', color:'#fde68a' },
+  'salaryman (kento nanami)':    { g:'linear-gradient(135deg,#3b1f0a 0%,#78350f 100%)', kanji:'7:3', color:'#fed7aa' },
+  'disaster plants (hanami)':    { g:'linear-gradient(135deg,#052e16 0%,#14532d 100%)', kanji:'花', color:'#86efac' },
+  'true cannon (ryu ishigori)':  { g:'linear-gradient(135deg,#431407 0%,#c2410c 100%)', kanji:'砲', color:'#fb923c' },
+  'black death (kurourushi)':    { g:'linear-gradient(135deg,#000000 0%,#1c1917 100%)', kanji:'疫', color:'#78716c' },
+  // Old-seed fallbacks by first word
+  'sukuna':  { g:'linear-gradient(135deg,#450a0a 0%,#991b1b 100%)', kanji:'呪', color:'#f87171' },
+  'gojo':    { g:'linear-gradient(135deg,#0f3460 0%,#1a6fbf 100%)', kanji:'∞', color:'#60a5fa' },
+  'yuta':    { g:'linear-gradient(135deg,#082f49 0%,#0c4a6e 100%)', kanji:'愛', color:'#7dd3fc' },
+  'toji':    { g:'linear-gradient(135deg,#111827 0%,#374151 100%)', kanji:'斬', color:'#d1d5db' },
+  'nanami':  { g:'linear-gradient(135deg,#3b1f0a 0%,#78350f 100%)', kanji:'7:3', color:'#fed7aa' },
+  'nobara':  { g:'linear-gradient(135deg,#831843 0%,#be185d 100%)', kanji:'釘', color:'#f9a8d4' },
+  'megumi':  { g:'linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%)', kanji:'影', color:'#93c5fd' },
+  'choso':   { g:'linear-gradient(135deg,#450a0a 0%,#7f1d1d 100%)', kanji:'血', color:'#fca5a5' },
+  'hakari':  { g:'linear-gradient(135deg,#451a03 0%,#b45309 100%)', kanji:'♠', color:'#fbbf24' },
+  'itadori': { g:'linear-gradient(135deg,#431407 0%,#ea580c 100%)', kanji:'黒', color:'#fb923c' },
+};
+
+function getCharTheme(charName) {
+  const key = (charName || '').toLowerCase().trim();
+  if (CHAR_THEMES[key]) return CHAR_THEMES[key];
+  // Try first word match
+  const first = key.split(/[\s(]/)[0];
+  if (CHAR_THEMES[first]) return CHAR_THEMES[first];
+  // Default purple
+  return { g:'linear-gradient(135deg,#1a0a2e 0%,#2d1557 100%)', kanji:'⚡', color:'#c084fc' };
+}
+
+// ── COMMENTS ─────────────────────────────────────────────────────
+let likedComments = JSON.parse(localStorage.getItem('jjs_liked_comments') || '[]');
+
+async function loadComments(codeId) {
+  try {
+    const res = await fetch(`/api/library/${codeId}/comments`);
+    const data = await res.json();
+    renderComments(data.comments || [], codeId);
+  } catch(e) {
+    document.getElementById('comments-list').innerHTML = '<div class="no-comments">Could not load comments</div>';
+  }
+}
+
+function renderComments(comments, codeId) {
+  const el = document.getElementById('comments-list');
+  const countEl = document.getElementById('comment-count');
+  countEl.textContent = comments.length ? `(${comments.length})` : '';
+
+  if (!comments.length) {
+    el.innerHTML = '<div class="no-comments">No comments yet — be the first!</div>';
+    return;
+  }
+
+  el.innerHTML = comments.map(cm => `
+    <div class="comment-item" id="cm-${cm.id}">
+      <div class="comment-author">${escHtml(cm.author || 'Anonymous')}</div>
+      <div class="comment-text">${escHtml(cm.text)}</div>
+      <div class="comment-meta">
+        <span>${timeAgo(cm.created_at)}</span>
+        <button class="comment-like-btn ${likedComments.includes(cm.id) ? 'liked' : ''}" onclick="likeComment('${cm.id}', '${codeId}', this)">
+          ${likedComments.includes(cm.id) ? '❤' : '♡'} ${cm.likes || 0}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function likeComment(commentId, codeId, btn) {
+  if (likedComments.includes(commentId)) return;
+  try {
+    const res = await fetch(`/api/library/comments/${commentId}/like`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      likedComments.push(commentId);
+      localStorage.setItem('jjs_liked_comments', JSON.stringify(likedComments));
+      btn.classList.add('liked');
+      btn.textContent = `❤ ${data.likes}`;
+    }
+  } catch(e) {}
+}
+
+async function submitComment() {
+  const text = document.getElementById('comment-text').value.trim();
+  const author = document.getElementById('comment-author-input').value.trim();
+  const errEl = document.getElementById('comment-error');
+
+  if (!text) { errEl.textContent = 'Write something first!'; return; }
+  if (text.length > 500) { errEl.textContent = 'Max 500 characters'; return; }
+  if (!currentModal) return;
+
+  errEl.textContent = '';
+  const btn = document.querySelector('.btn-comment-submit');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  try {
+    const res = await fetch(`/api/library/${currentModal.id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, author })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('comment-text').value = '';
+    showToast('✓ Comment posted!');
+    loadComments(currentModal.id);
+  } catch(e) {
+    errEl.textContent = e.message || 'Error posting comment';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Post ⚡';
+  }
 }
 
 loadLibrary('likes');

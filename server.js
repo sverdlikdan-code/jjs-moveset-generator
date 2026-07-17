@@ -157,5 +157,51 @@ app.post('/api/library', async (req, res) => {
   }
 });
 
+// ── COMMENTS: get for code ──
+app.get('/api/library/:id/comments', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('id, text, author, likes, created_at')
+      .eq('code_id', req.params.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    res.json({ comments: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── COMMENTS: post comment ──
+app.post('/api/library/:id/comments', async (req, res) => {
+  try {
+    const { text, author } = req.body;
+    if (!text || text.trim().length === 0) return res.status(400).json({ error: 'text required' });
+    const { data, error } = await supabase.from('comments').insert([{
+      code_id: req.params.id,
+      text: text.slice(0, 500),
+      author: (author || 'Anonymous').slice(0, 40),
+      likes: 0
+    }]).select().single();
+    if (error) throw error;
+    res.json({ ok: true, comment: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── COMMENTS: like comment ──
+app.post('/api/library/comments/:commentId/like', async (req, res) => {
+  try {
+    const { data } = await supabase.from('comments').select('likes').eq('id', req.params.commentId).single();
+    const { error } = await supabase.from('comments').update({ likes: (data.likes || 0) + 1 }).eq('id', req.params.commentId);
+    if (error) throw error;
+    res.json({ ok: true, likes: (data.likes || 0) + 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => console.log(`JJS Generator: http://localhost:${PORT}`));
