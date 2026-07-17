@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JJS Code Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #07070f;
+  --bg-card: #0e0e1a;
+  --bg-input: #161628;
+  --accent: #7c3aed;
+  --accent-light: #c084fc;
+  --accent-glow: rgba(124,58,237,0.5);
+  --cyan: #22d3ee;
+  --cyan-glow: rgba(34,211,238,0.4);
+  --red: #ef4444;
+  --green: #4ade80;
+  --yellow: #fbbf24;
+  --orange: #f97316;
+  --border: rgba(124,58,237,0.2);
+  --text: #e2e8f0;
+  --text-dim: #64748b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(124,58,237,0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+header {
+  position: relative;
+  background: linear-gradient(180deg, #0f0520 0%, #07070f 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 32px;
+  z-index: 1;
+}
+
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), var(--accent), transparent);
+  opacity: 0.6;
+}
+
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.logo-icon { font-size: 1.8rem; filter: drop-shadow(0 0 10px var(--accent)); }
+.logo h1 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  letter-spacing: 0.5px;
+}
+.logo p { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.5px; margin-top: 1px; }
+
+.header-actions { display: flex; gap: 10px; align-items: center; }
+
+.btn-back {
+  padding: 8px 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-back:hover { border-color: var(--accent); color: var(--accent-light); }
+
+.btn-submit {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, var(--accent), #9333ea);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  box-shadow: 0 0 14px var(--accent-glow);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+.btn-submit:hover { box-shadow: 0 0 24px var(--accent-glow); transform: translateY(-1px); }
+
+/* ── MAIN ── */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── SORT TABS ── */
+.sort-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sort-label { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.5px; margin-right: 4px; }
+
+.sort-btn {
+  padding: 6px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sort-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+.sort-btn.active {
+  background: rgba(124,58,237,0.15);
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.stat-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.stat-chip span { color: var(--cyan); font-weight: 600; }
+
+/* ── GRID ── */
+.codes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* ── CODE CARD ── */
+.code-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  animation: fadeSlideIn 0.25s ease forwards;
+}
+
+.code-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.code-card:hover {
+  border-color: rgba(124,58,237,0.5);
+  box-shadow: 0 4px 24px rgba(124,58,237,0.12);
+  transform: translateY(-2px);
+}
+.code-card:hover::before { opacity: 1; }
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.card-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.card-char {
+  font-size: 0.72rem;
+  color: var(--accent-light);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.card-rank {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: rgba(124,58,237,0.25);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.tag {
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 10px;
+  padding: 2px 9px;
+  font-size: 0.68rem;
+  color: var(--accent-light);
+  letter-spacing: 0.3px;
+}
+
+.card-meta {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(124,58,237,0.1);
+  padding-top: 12px;
+}
+
+.card-stats { display: flex; gap: 12px; }
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.stat-icon { font-size: 0.85rem; }
+
+.stat.likes { color: var(--red); }
+.stat.likes .stat-icon { filter: drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
+.stat.copies { color: var(--cyan); }
+
+.btn-like {
+  padding: 5px 12px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-like:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5); }
+.btn-like.liked { background: rgba(239,68,68,0.25); border-color: var(--red); }
+
+.btn-copy-card {
+  padding: 5px 12px;
+  background: rgba(34,211,238,0.08);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-radius: 8px;
+  color: var(--cyan);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-copy-card:hover { background: rgba(34,211,238,0.18); border-color: rgba(34,211,238,0.5); }
+.btn-copy-card.copied { color: var(--green); border-color: var(--green); }
+
+/* ── CODE MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,7,15,0.85);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid rgba(124,58,237,0.4);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 0 60px rgba(124,58,237,0.2);
+  animation: fadeSlideIn 0.2s ease;
+}
+
+.modal-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  margin-bottom: 6px;
+}
+.modal-char { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 16px; }
+
+.modal-code {
+  background: #0a0a14;
+  border: 1px solid rgba(34,211,238,0.2);
+  border-radius: 10px;
+  padding: 14px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--cyan);
+  word-break: break-all;
+  line-height: 1.6;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+.modal-actions { display: flex; gap: 10px; }
+
+.btn-modal-copy {
+  flex: 1;
+  padding: 11px;
+  background: linear-gradient(135deg, var(--accent), #9333ea);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 0 16px var(--accent-glow);
+  transition: box-shadow 0.2s;
+}
+.btn-modal-copy:hover { box-shadow: 0 0 28px var(--accent-glow); }
+.btn-modal-copy.copied { background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 0 16px rgba(74,222,128,0.3); }
+
+.btn-modal-close {
+  padding: 11px 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-modal-close:hover { border-color: var(--accent); color: var(--text); }
+
+/* ── SUBMIT MODAL ── */
+.submit-modal {
+  background: var(--bg-card);
+  border: 1px solid rgba(124,58,237,0.4);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 0 60px rgba(124,58,237,0.2);
+  animation: fadeSlideIn 0.2s ease;
+}
+
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.form-group input, .form-group textarea {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  resize: vertical;
+}
+.form-group input:focus, .form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(124,58,237,0.2);
+}
+.form-group textarea { min-height: 80px; font-family: monospace; font-size: 0.78rem; }
+
+/* ── EMPTY / LOADING ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty-icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-text { font-size: 1rem; }
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+  gap: 8px;
+}
+.loader span {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: bounce 0.8s ease-in-out infinite;
+}
+.loader span:nth-child(2) { animation-delay: 0.15s; }
+.loader span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+  0%,100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-10px); opacity: 1; }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-card);
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  padding: 10px 20px;
+  color: var(--green);
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 99999;
+  transition: transform 0.3s ease;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 600px) {
+  header { padding: 14px 16px; }
+  .container { padding: 20px 16px; }
+  .codes-grid { grid-template-columns: 1fr; }
+  .logo h1 { font-size: 1.1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="/">
+      <span class="logo-icon">⚡</span>
+      <div>
+        <h1>CODE LIBRARY</h1>
+        <p>Community Movesets — Jujutsu Shenanigans</p>
+      </div>
+    </a>
+    <div class="header-actions">
+      <button class="btn-submit" onclick="openSubmit()">+ Submit Code</button>
+      <a class="btn-back" href="/">← Generator</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-chip">Total codes: <span id="stat-total">—</span></div>
+    <div class="stat-chip">Most liked: <span id="stat-top">—</span></div>
+  </div>
+
+  <div class="sort-bar">
+    <span class="sort-label">SORT BY</span>
+    <button class="sort-btn active" onclick="loadLibrary('likes', this)">🔥 Hot</button>
+    <button class="sort-btn" onclick="loadLibrary('copies', this)">📋 Most Used</button>
+    <button class="sort-btn" onclick="loadLibrary('new', this)">✨ New</button>
+  </div>
+
+  <div id="codes-grid" class="codes-grid">
+    <div class="loader"><span></span><span></span><span></span></div>
+  </div>
+
+</div>
+
+<!-- Code detail modal -->
+<div class="modal-overlay" id="code-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-name">—</div>
+    <div class="modal-char" id="modal-char">—</div>
+    <div class="modal-code" id="modal-code">—</div>
+    <div class="modal-actions">
+      <button class="btn-modal-copy" id="modal-copy-btn" onclick="copyModalCode()">⎘ Copy Code</button>
+      <button class="btn-modal-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Submit modal -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="submit-modal">
+    <div class="modal-title" style="margin-bottom:18px">+ Submit Your Code</div>
+    <div class="form-group">
+      <label>Moveset Name</label>
+      <input id="sub-name" type="text" placeholder="e.g. Sukuna 100%" maxlength="80" />
+    </div>
+    <div class="form-group">
+      <label>Character</label>
+      <input id="sub-char" type="text" placeholder="e.g. Sukuna, Gojo, Yuta..." maxlength="60" />
+    </div>
+    <div class="form-group">
+      <label>Your Name / Tag (optional)</label>
+      <input id="sub-author" type="text" placeholder="Anonymous" maxlength="40" />
+    </div>
+    <div class="form-group">
+      <label>Tags (comma separated)</label>
+      <input id="sub-tags" type="text" placeholder="e.g. pvp, combo, speedrun" />
+    </div>
+    <div class="form-group">
+      <label>JJS Code</label>
+      <textarea id="sub-code" placeholder="Paste your base64 code here..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-submit" style="flex:1;padding:11px" onclick="submitCode()">Submit ⚡</button>
+      <button class="btn-modal-close" onclick="closeSubmit()">Cancel</button>
+    </div>
+    <div id="sub-error" style="margin-top:10px;font-size:0.78rem;color:var(--red);min-height:16px"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+let currentModal = null;
+let likedIds = JSON.parse(localStorage.getItem('jjs_liked') || '[]');
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function loadLibrary(sort = 'likes', btn) {
+  if (btn) {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  document.getElementById('codes-grid').innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
+
+  try {
+    const res = await fetch(`/api/library?sort=${sort}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderCodes(data.codes, sort);
+  } catch (e) {
+    document.getElementById('codes-grid').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚡</div>
+        <div class="empty-text">No codes yet — be the first to submit!</div>
+      </div>`;
+  }
+}
+
+function renderCodes(codes, sort) {
+  const grid = document.getElementById('codes-grid');
+
+  document.getElementById('stat-total').textContent = codes.length;
+  if (codes.length > 0) {
+    const top = codes.reduce((a, b) => (b.likes > a.likes ? b : a), codes[0]);
+    document.getElementById('stat-top').textContent = top.name;
+  }
+
+  if (!codes.length) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">Library is empty — submit the first code!</div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = codes.map((c, i) => `
+    <div class="code-card" onclick="openCode('${c.id}')">
+      <div class="card-header">
+        <div>
+          <div class="card-name">${escHtml(c.name)}</div>
+          <div class="card-char">${escHtml(c.character)}</div>
+        </div>
+        <div class="card-rank">#${i + 1}</div>
+      </div>
+      ${c.tags && c.tags.length ? `<div class="card-tags">${c.tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
+      <div class="card-meta">by ${escHtml(c.author || 'Anonymous')} · ${timeAgo(c.created_at)}</div>
+      <div class="card-footer">
+        <div class="card-stats">
+          <div class="stat likes"><span class="stat-icon">❤</span> ${c.likes}</div>
+          <div class="stat copies"><span class="stat-icon">📋</span> ${c.copies}</div>
+        </div>
+        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+          <button class="btn-like ${likedIds.includes(c.id) ? 'liked' : ''}" onclick="likeCode('${c.id}', this)">
+            ${likedIds.includes(c.id) ? '❤ Liked' : '♡ Like'}
+          </button>
+          <button class="btn-copy-card" onclick="quickCopy('${c.id}', this)">⎘</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openCode(id) {
+  const modal = document.getElementById('code-modal');
+  document.getElementById('modal-name').textContent = '...';
+  document.getElementById('modal-char').textContent = '';
+  document.getElementById('modal-code').textContent = 'Loading...';
+  modal.classList.add('open');
+
+  try {
+    const res = await fetch(`/api/library/${id}`);
+    const data = await res.json();
+    document.getElementById('modal-name').textContent = data.name;
+    document.getElementById('modal-char').textContent = data.character + (data.author ? ' · by ' + data.author : '');
+    document.getElementById('modal-code').textContent = data.code;
+    currentModal = data;
+  } catch(e) {
+    document.getElementById('modal-code').textContent = 'Error loading code';
+  }
+}
+
+function closeModal() {
+  document.getElementById('code-modal').classList.remove('open');
+  currentModal = null;
+  const btn = document.getElementById('modal-copy-btn');
+  btn.textContent = '⎘ Copy Code';
+  btn.classList.remove('copied');
+}
+
+function copyModalCode() {
+  if (!currentModal) return;
+  navigator.clipboard.writeText(currentModal.code);
+  const btn = document.getElementById('modal-copy-btn');
+  btn.textContent = '✓ Copied!';
+  btn.classList.add('copied');
+  showToast('Code copied to clipboard!');
+  setTimeout(() => { btn.textContent = '⎘ Copy Code'; btn.classList.remove('copied'); }, 2500);
+}
+
+async function quickCopy(id, btn) {
+  try {
+    const res = await fetch(`/api/library/${id}`);
+    const data = await res.json();
+    navigator.clipboard.writeText(data.code);
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    showToast('Code copied!');
+    setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 2000);
+  } catch(e) { showToast('Error'); }
+}
+
+async function likeCode(id, btn) {
+  if (likedIds.includes(id)) return;
+  try {
+    const res = await fetch(`/api/library/${id}/like`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      likedIds.push(id);
+      localStorage.setItem('jjs_liked', JSON.stringify(likedIds));
+      btn.textContent = '❤ Liked';
+      btn.classList.add('liked');
+      showToast('❤ Liked!');
+    }
+  } catch(e) {}
+}
+
+function openSubmit() { document.getElementById('submit-modal').classList.add('open'); }
+function closeSubmit() {
+  document.getElementById('submit-modal').classList.remove('open');
+  document.getElementById('sub-error').textContent = '';
+}
+
+async function submitCode() {
+  const name = document.getElementById('sub-name').value.trim();
+  const character = document.getElementById('sub-char').value.trim();
+  const author = document.getElementById('sub-author').value.trim();
+  const tagsRaw = document.getElementById('sub-tags').value.trim();
+  const code = document.getElementById('sub-code').value.trim();
+  const errEl = document.getElementById('sub-error');
+
+  if (!name || !code) { errEl.textContent = 'Name and Code are required'; return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean).slice(0, 5) : [];
+
+  try {
+    const res = await fetch('/api/library', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, character, author, tags, code })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    closeSubmit();
+    showToast('✓ Code submitted!');
+    loadLibrary('new', null);
+    // reset form
+    ['sub-name','sub-char','sub-author','sub-tags','sub-code'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    errEl.textContent = e.message;
+  }
+}
+
+// Close modals on overlay click
+document.getElementById('code-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('code-modal')) closeModal();
+});
+document.getElementById('submit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('submit-modal')) closeSubmit();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeSubmit(); }
+});
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+loadLibrary('likes');
+</script>
+</body>
+</html>
