@@ -12,12 +12,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cloud.umami.is"],
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", "https://*.supabase.co"],
+      connectSrc: ["'self'", "https://*.supabase.co", "https://cloud.umami.is"],
     }
   },
   crossOriginEmbedderPolicy: false,
