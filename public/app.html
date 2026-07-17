@@ -1091,7 +1091,7 @@ function addMove() {
         <input type="text" id="name-${id}" placeholder="e.g. Hollow Purple" value="Custom Strike">
       </div>
       <div>
-        <label data-tip="SKILL=Q · EVASIVE=F · SPECIAL=R · MELEE=M1 · CHASE=follow-up · AWAKENING=ultimate">Slot Type</label>
+        <label data-tip="Which move slot this is. SKILL = your main ability. EVASIVE = dodge move. SPECIAL = strong attack. MELEE = basic punch. AWAKENING = ultimate.">Slot Type</label>
         <select id="slotType-${id}" onchange="updateBadge(${id})">
           ${SLOT_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
         </select>
