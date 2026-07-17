@@ -245,7 +245,7 @@ header::before {
 
 /* ── CONTAINER ── */
 .container {
-  max-width: 900px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 28px 16px 60px;
   position: relative;
@@ -548,6 +548,152 @@ select {
   box-shadow: 0 0 16px rgba(74,222,128,0.25);
 }
 
+/* ── GEN 2-COLUMN LAYOUT ── */
+.gen-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+.gen-form { min-width: 0; }
+.gen-preview-panel {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.preview-panel-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(124,58,237,0.15);
+}
+.preview-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(124,58,237,0.2);
+  border-radius: 12px;
+  line-height: 1.7;
+}
+.preview-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: 0.4; }
+
+/* ── ANIME FIGHT CARD ── */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateX(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes statFlash {
+  0%   { transform: scale(1.25); filter: brightness(2.5); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+@keyframes glowPulse {
+  0%,100% { box-shadow: 0 0 12px var(--c-glow,rgba(124,58,237,0.25)); }
+  50%      { box-shadow: 0 0 28px var(--c-glow,rgba(124,58,237,0.5)); }
+}
+
+.live-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--c-border, rgba(124,58,237,0.3));
+  background: rgba(0,0,0,0.5);
+  animation: cardIn 0.28s cubic-bezier(0.34,1.56,0.64,1), glowPulse 3s ease-in-out 0.3s infinite;
+  position: relative;
+}
+.live-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+.live-card-header {
+  padding: 12px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.live-card-header::before {
+  content: attr(data-symbol);
+  position: absolute;
+  right: 12px; top: -4px;
+  font-size: 3.8rem;
+  opacity: 0.18;
+  font-family: serif;
+  line-height: 1;
+  color: #fff;
+  pointer-events: none;
+}
+.live-card-type {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 0 12px rgba(255,255,255,0.5);
+  z-index: 1;
+}
+.live-card-index {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  z-index: 1;
+}
+.live-card-body { padding: 0 16px 14px; position: relative; z-index: 1; }
+.live-card-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.3px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.live-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+}
+.live-stat {
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.live-stat-label {
+  font-size: 0.55rem;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+.live-stat-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--c-accent, #c084fc);
+  text-shadow: 0 0 14px var(--c-glow, rgba(192,132,252,0.5));
+  display: block;
+  transition: color 0.15s;
+}
+.live-stat-value.flash { animation: statFlash 0.28s ease; }
+
+/* decode panel legacy */
 .move-preview {
   margin-top: 16px;
   display: flex;
@@ -572,27 +718,14 @@ select {
   animation: fadeSlideIn 0.2s ease;
 }
 .preview-card-info { flex: 1; min-width: 0; }
-.preview-move-name {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.preview-stats {
-  display: flex;
-  gap: 10px;
-  margin-top: 4px;
-  flex-wrap: wrap;
-}
-.preview-stat {
-  font-size: 0.68rem;
-  color: var(--text-dim);
-}
-.preview-stat span {
-  color: var(--text);
-  font-weight: 600;
+.preview-move-name { font-size:0.82rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.preview-stats { display:flex; gap:10px; margin-top:4px; flex-wrap:wrap; }
+.preview-stat { font-size:0.68rem; color:var(--text-dim); }
+.preview-stat span { color:var(--text); font-weight:600; }
+
+@media (max-width: 860px) {
+  .gen-layout { grid-template-columns: 1fr; }
+  .gen-preview-panel { position: static; }
 }
 
 /* ── DECODE PANEL ── */
@@ -763,25 +896,33 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
 
   <!-- GENERATE PANEL -->
   <div class="panel active" id="panel-generate">
-    <div id="moves-list"></div>
-
-    <button class="btn-add" onclick="addMove()">+ Add Move</button>
-
-    <div class="gen-actions">
-      <button class="btn btn-generate" onclick="generateCode()">Generate Code</button>
-      <span id="gen-status" class="success"></span>
-    </div>
-
-    <div class="result-box glow" id="result-box" style="display:none;">
-      <div class="result-label">Your JJS Import Code — paste in Skill Builder</div>
-      <div class="code-output" id="code-output"></div>
-      <button class="copy-btn" id="copy-btn" onclick="copyCode()">⎘ Copy Code</button>
-      <div class="move-preview" id="move-preview" style="display:none">
-        <div class="preview-label">Move Preview</div>
-        <div id="preview-cards"></div>
+    <div class="gen-layout">
+      <!-- LEFT: form -->
+      <div class="gen-form">
+        <div id="moves-list"></div>
+        <button class="btn-add" onclick="addMove()">+ Add Move</button>
+        <div class="gen-actions">
+          <button class="btn btn-generate" onclick="generateCode()">Generate Code</button>
+          <span id="gen-status" class="success"></span>
+        </div>
+        <div class="error" id="gen-error"></div>
+        <div class="result-box glow" id="result-box" style="display:none;">
+          <div class="result-label">Your JJS Import Code — paste in Skill Builder</div>
+          <div class="code-output" id="code-output"></div>
+          <button class="copy-btn" id="copy-btn" onclick="copyCode()">⎘ Copy Code</button>
+        </div>
+      </div>
+      <!-- RIGHT: live preview panel -->
+      <div class="gen-preview-panel">
+        <div class="preview-panel-title">⚡ Live Preview</div>
+        <div id="live-preview-cards">
+          <div class="preview-empty-state">
+            <div class="preview-empty-icon">⚔</div>
+            Add a move to see<br>your build preview
+          </div>
+        </div>
       </div>
     </div>
-    <div class="error" id="gen-error"></div>
   </div>
 
   <!-- DECODE PANEL -->
@@ -871,6 +1012,7 @@ function addMove() {
     </div>
   `;
   document.getElementById('moves-list').appendChild(div);
+  updateLivePreview();
 }
 
 function updateBadge(id) {
@@ -883,6 +1025,7 @@ function updateBadge(id) {
 
 function removeMove(id) {
   document.getElementById(`move-${id}`)?.remove();
+  updateLivePreview();
 }
 
 function getMoveData() {
@@ -1064,6 +1207,57 @@ function applyLang() {
   }
 }
 
+// ── LIVE PREVIEW ─────────────────────────────────────────────────
+const SLOT_META = {
+  SKILL:     { g:'linear-gradient(135deg,#0f3460,#1e40af)', accent:'#60a5fa', glow:'rgba(96,165,250,0.45)',  border:'rgba(96,165,250,0.3)',  symbol:'⚡' },
+  MELEE:     { g:'linear-gradient(135deg,#450a0a,#991b1b)', accent:'#f87171', glow:'rgba(248,113,113,0.45)', border:'rgba(248,113,113,0.3)', symbol:'⚔' },
+  SPECIAL:   { g:'linear-gradient(135deg,#2e1065,#6d28d9)', accent:'#c084fc', glow:'rgba(192,132,252,0.45)', border:'rgba(192,132,252,0.3)', symbol:'✦' },
+  CHASE:     { g:'linear-gradient(135deg,#052e16,#166534)', accent:'#4ade80', glow:'rgba(74,222,128,0.45)',  border:'rgba(74,222,128,0.3)',  symbol:'➤' },
+  AWAKENING: { g:'linear-gradient(135deg,#451a03,#b45309)', accent:'#fbbf24', glow:'rgba(251,191,36,0.45)',  border:'rgba(251,191,36,0.3)',  symbol:'★' },
+};
+const DEFAULT_META = { g:'linear-gradient(135deg,#1a0a2e,#2d1557)', accent:'#c084fc', glow:'rgba(192,132,252,0.35)', border:'rgba(124,58,237,0.3)', symbol:'⚡' };
+
+function updateLivePreview() {
+  const moves = getMoveData();
+  const container = document.getElementById('live-preview-cards');
+  if (!moves.length) {
+    container.innerHTML = `<div class="preview-empty-state"><div class="preview-empty-icon">⚔</div>Add a move to see<br>your build preview</div>`;
+    return;
+  }
+  container.innerHTML = moves.map((m, i) => {
+    const type = (m.slotType || 'SKILL').toUpperCase();
+    const meta = SLOT_META[type] || DEFAULT_META;
+    const name = m.name || 'Unnamed Move';
+    return `<div class="live-card" style="--c-glow:${meta.glow};--c-border:${meta.border};--c-accent:${meta.accent}">
+      <div class="live-card-header" style="background:${meta.g}" data-symbol="${meta.symbol}">
+        <span class="live-card-type">${type}</span>
+        <span class="live-card-index">SLOT ${i+1}</span>
+      </div>
+      <div class="live-card-body">
+        <div class="live-card-name">${escHtml(name)}</div>
+        <div class="live-card-stats">
+          <div class="live-stat">
+            <span class="live-stat-label">DAMAGE</span>
+            <span class="live-stat-value" style="color:${meta.accent};text-shadow:0 0 14px ${meta.glow}">${m.damage || 0}</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-label">STUN</span>
+            <span class="live-stat-value">${m.stun || 0}s</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-label">COOLDOWN</span>
+            <span class="live-stat-value">${m.cooldown || 0}s</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-label">FORCE</span>
+            <span class="live-stat-value">${m.force || 0}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── MOVE PREVIEW ──
 const BADGE_COLORS = { SKILL:'#60a5fa', MELEE:'#f87171', SPECIAL:'#c084fc', CHASE:'#4ade80', AWAKENING:'#fbbf24' };
 
@@ -1229,12 +1423,14 @@ document.addEventListener('DOMContentLoaded', () => {
     gateInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitGate(); });
   }
 
-  // Play entry sound on first user interaction (browser requires user gesture for AudioContext)
+  // Live preview — update on any input change in moves list
+  document.getElementById('moves-list').addEventListener('input', updateLivePreview);
+  document.getElementById('moves-list').addEventListener('change', updateLivePreview);
+
   // Global click sounds for all interactive elements
   document.addEventListener('click', e => {
     const el = e.target.closest('button, .tab, .lang-option, .copy-btn, .btn-add, .btn-danger');
     if (!el) return;
-    // Generate and Copy have their own bigger sounds — skip click sound for them
     if (el.classList.contains('btn-generate') || el.id === 'copy-btn') return;
     soundClick();
   });
