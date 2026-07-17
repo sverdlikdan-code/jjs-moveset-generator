@@ -187,8 +187,8 @@ header {
   background: linear-gradient(180deg, #0f0520 0%, #07070f 100%);
   border-bottom: 1px solid var(--border);
   padding: 20px 32px;
-  overflow: hidden;
-  z-index: 1;
+  overflow: visible;
+  z-index: 100;
 }
 
 header::before {
@@ -645,7 +645,7 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
   border-radius: 10px;
   padding: 6px;
   display: none;
-  z-index: 100;
+  z-index: 10000;
   min-width: 160px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 24px rgba(124,58,237,0.15);
 }
@@ -1133,6 +1133,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (gateInput) {
     gateInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitGate(); });
   }
+
+  // Play entry sound on first user interaction (browser requires user gesture for AudioContext)
+  const playEntryOnce = () => {
+    const stored = (() => { try { return JSON.parse(localStorage.getItem(GATE_KEY)); } catch(e) { return null; } })();
+    if (stored && stored.ok) {
+      playTone(440, 'sine', 0.12, 0.2, true);
+      setTimeout(() => playTone(660, 'triangle', 0.15, 0.18, true), 100);
+    }
+    document.removeEventListener('click', playEntryOnce);
+    document.removeEventListener('keydown', playEntryOnce);
+  };
+  document.addEventListener('click', playEntryOnce, { once: true });
+  document.addEventListener('keydown', playEntryOnce, { once: true });
 });
 
 // Wrap generate button with sound
