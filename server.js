@@ -1,4 +1,5 @@
 const express = require('express');
+const helmet = require('helmet');
 const { compress, decompress } = require('@mongodb-js/zstd');
 const { createClient } = require('@supabase/supabase-js');
 const { rateLimit } = require('express-rate-limit');
@@ -6,7 +7,21 @@ const crypto = require('crypto');
 const path = require('path');
 
 const app = express();
-app.use(express.json());
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", "https://*.supabase.co"],
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── RATE LIMITING ──
