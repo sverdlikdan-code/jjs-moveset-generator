@@ -797,7 +797,10 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
         <span class="error" id="decode-error" style="display:inline;margin-left:12px;"></span>
       </div>
     </div>
-    <pre id="decode-output" style="display:none;"></pre>
+    <div class="move-preview" id="decode-output" style="display:none">
+      <div class="preview-label">Decoded Moves</div>
+      <div id="decode-cards"></div>
+    </div>
   </div>
 </div>
 
@@ -949,9 +952,8 @@ async function decodeCode() {
     const res  = await fetch('/api/decode', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code}) });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    const out = document.getElementById('decode-output');
-    out.textContent = JSON.stringify(data.slots, null, 2);
-    out.style.display = 'block';
+    renderSlotCards(data.slots, 'decode-cards');
+    document.getElementById('decode-output').style.display = 'flex';
   } catch(err) {
     document.getElementById('decode-error').textContent = 'Error: ' + err.message;
   }
@@ -1065,43 +1067,42 @@ function applyLang() {
 // ── MOVE PREVIEW ──
 const BADGE_COLORS = { SKILL:'#60a5fa', MELEE:'#f87171', SPECIAL:'#c084fc', CHASE:'#4ade80', AWAKENING:'#fbbf24' };
 
+function renderSlotCards(slots, containerId) {
+  const cardsEl = document.getElementById(containerId);
+  cardsEl.innerHTML = slots.map(slot => {
+    const type  = slot.K_NAME || 'SKILL';
+    const color = BADGE_COLORS[type] || '#a78bfa';
+    let dmg = '—', stun = '—', force = '—';
+    try {
+      const parsed = JSON.parse(slot.DATA);
+      const hitbox = parsed.Line.find(l => l.K_NAME === 'HITBOX');
+      const velo   = parsed.Line.find(l => l.K_NAME === 'VELO');
+      if (hitbox) { dmg = hitbox.DAMAGE ?? '—'; stun = hitbox.STUN ?? '—'; }
+      if (velo)   { force = velo.FORCE ?? '—'; }
+    } catch(e) {}
+    return `<div class="preview-card">
+      <span class="slot-badge slot-${type}" style="flex-shrink:0">${type}</span>
+      <div class="preview-card-info">
+        <div class="preview-move-name">${escHtml(slot.NAME || 'Unnamed')}</div>
+        <div class="preview-stats">
+          <span class="preview-stat">DMG <span style="color:${color}">${dmg}</span></span>
+          <span class="preview-stat">STUN <span>${stun}s</span></span>
+          <span class="preview-stat">CD <span>${slot.COOLDOWN ?? '—'}s</span></span>
+          <span class="preview-stat">FORCE <span>${force}</span></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 async function renderMovePreview(code) {
   const previewEl = document.getElementById('move-preview');
-  const cardsEl   = document.getElementById('preview-cards');
   previewEl.style.display = 'none';
-  cardsEl.innerHTML = '';
-
   try {
     const res  = await fetch('/api/decode', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code }) });
     const data = await res.json();
     if (data.error || !data.slots) return;
-
-    cardsEl.innerHTML = data.slots.map(slot => {
-      const type  = slot.K_NAME || 'SKILL';
-      const color = BADGE_COLORS[type] || '#a78bfa';
-      let dmg = '—', stun = '—', force = '—';
-      try {
-        const parsed = JSON.parse(slot.DATA);
-        const hitbox = parsed.Line.find(l => l.K_NAME === 'HITBOX');
-        const velo   = parsed.Line.find(l => l.K_NAME === 'VELO');
-        if (hitbox) { dmg = hitbox.DAMAGE ?? '—'; stun = hitbox.STUN ?? '—'; }
-        if (velo)   { force = velo.FORCE ?? '—'; }
-      } catch(e) {}
-
-      return `<div class="preview-card">
-        <span class="slot-badge slot-${type}" style="flex-shrink:0">${type}</span>
-        <div class="preview-card-info">
-          <div class="preview-move-name">${escHtml(slot.NAME || 'Unnamed')}</div>
-          <div class="preview-stats">
-            <span class="preview-stat">DMG <span style="color:${color}">${dmg}</span></span>
-            <span class="preview-stat">STUN <span>${stun}s</span></span>
-            <span class="preview-stat">CD <span>${slot.COOLDOWN ?? '—'}s</span></span>
-            <span class="preview-stat">FORCE <span>${force}</span></span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-
+    renderSlotCards(data.slots, 'preview-cards');
     previewEl.style.display = 'flex';
   } catch(e) {}
 }
