@@ -758,7 +758,8 @@ async function loadLibrary(sort = 'likes', btn) {
   document.getElementById('codes-grid').innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
 
   try {
-    const res = await fetch(`/api/library?sort=${sort}`);
+    const res = await fetch(`/api/library?sort=${sort}`, { headers: getAuthHeaders() });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderCodes(data.codes, sort);
@@ -832,7 +833,8 @@ async function openCode(id) {
   modal.classList.add('open');
 
   try {
-    const res = await fetch(`/api/library/${id}`);
+    const res = await fetch(`/api/library/${id}`, { headers: getAuthHeaders() });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     document.getElementById('modal-name').textContent = data.name;
     document.getElementById('modal-char').textContent = data.character + (data.author ? ' · by ' + data.author : '');
@@ -872,7 +874,8 @@ function copyModalCode() {
 
 async function quickCopy(id, btn) {
   try {
-    const res = await fetch(`/api/library/${id}`);
+    const res = await fetch(`/api/library/${id}`, { headers: getAuthHeaders() });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     navigator.clipboard.writeText(data.code);
     btn.textContent = '✓';
@@ -885,7 +888,7 @@ async function quickCopy(id, btn) {
 async function likeCode(id, btn) {
   if (likedIds.includes(id)) return;
   try {
-    const res = await fetch(`/api/library/${id}/like`, { method: 'POST' });
+    const res = await fetch(`/api/library/${id}/like`, { method: 'POST', headers: getAuthHeaders() });
     const data = await res.json();
     if (data.ok) {
       likedIds.push(id);
@@ -917,9 +920,10 @@ async function submitCode() {
   try {
     const res = await fetch('/api/library', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ name, character, author, tags, code })
     });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     closeSubmit();
@@ -946,6 +950,17 @@ document.addEventListener('keydown', e => {
 
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getAuthHeaders(extra) {
+  const token = localStorage.getItem('jjs_api_token') || '';
+  return Object.assign({ 'Authorization': `Bearer ${token}` }, extra || {});
+}
+
+function handleUnauth() {
+  localStorage.removeItem('jjs_beta_auth');
+  localStorage.removeItem('jjs_api_token');
+  window.location.href = '/';
 }
 
 function timeAgo(ts) {
@@ -1004,7 +1019,8 @@ let likedComments = JSON.parse(localStorage.getItem('jjs_liked_comments') || '[]
 
 async function loadComments(codeId) {
   try {
-    const res = await fetch(`/api/library/${codeId}/comments`);
+    const res = await fetch(`/api/library/${codeId}/comments`, { headers: getAuthHeaders() });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     renderComments(data.comments || [], codeId);
   } catch(e) {
@@ -1039,7 +1055,7 @@ function renderComments(comments, codeId) {
 async function likeComment(commentId, codeId, btn) {
   if (likedComments.includes(commentId)) return;
   try {
-    const res = await fetch(`/api/library/comments/${commentId}/like`, { method: 'POST' });
+    const res = await fetch(`/api/library/comments/${commentId}/like`, { method: 'POST', headers: getAuthHeaders() });
     const data = await res.json();
     if (data.ok) {
       likedComments.push(commentId);
@@ -1067,9 +1083,10 @@ async function submitComment() {
   try {
     const res = await fetch(`/api/library/${currentModal.id}/comments`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ text, author })
     });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     document.getElementById('comment-text').value = '';

@@ -1,11 +1,56 @@
 const express = require('express');
 const { compress, decompress } = require('@mongodb-js/zstd');
 const { createClient } = require('@supabase/supabase-js');
+const { rateLimit } = require('express-rate-limit');
+const crypto = require('crypto');
 const path = require('path');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── RATE LIMITING ──
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, slow down.' }
+});
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many submissions, try again later.' }
+});
+app.use('/api/', generalLimiter);
+app.use('/api/library', (req, res, next) => {
+  if (req.method === 'POST') return writeLimiter(req, res, next);
+  next();
+});
+app.use('/api/library/:id/comments', (req, res, next) => {
+  if (req.method === 'POST') return writeLimiter(req, res, next);
+  next();
+});
+
+// ── API TOKEN AUTH ──
+const BETA_PASS = process.env.BETA_PASSWORD || 'JJS2026';
+function makeToken(pass) {
+  return crypto.createHash('sha256').update(pass + 'jjs_api_v1').digest('hex').slice(0, 40);
+}
+const VALID_TOKEN = makeToken(BETA_PASS);
+
+function requireToken(req, res, next) {
+  const auth = req.headers['authorization'] || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (token !== VALID_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+  next();
+}
+// Apply to all API routes except /api/auth itself
+app.use('/api/library', requireToken);
+app.use('/api/generate', requireToken);
+app.use('/api/decode', requireToken);
 
 // Supabase client (service role — server side only)
 const supabase = createClient(
@@ -84,9 +129,8 @@ app.post('/api/decode', async (req, res) => {
 // ── BETA AUTH ──
 app.post('/api/auth', (req, res) => {
   const { password } = req.body;
-  const BETA_PASS = process.env.BETA_PASSWORD || 'JJS2026';
   if (password === BETA_PASS) {
-    res.json({ ok: true });
+    res.json({ ok: true, token: VALID_TOKEN });
   } else {
     res.status(401).json({ ok: false });
   }

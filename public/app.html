@@ -1059,7 +1059,8 @@ async function generateCode() {
   btn.textContent = '⚡ Generating...';
   btn.disabled = true;
   try {
-    const res  = await fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({moves}) });
+    const res  = await fetch('/api/generate', { method:'POST', headers: getAuthHeaders(), body:JSON.stringify({moves}) });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     document.getElementById('code-output').textContent = data.code;
@@ -1092,11 +1093,12 @@ async function decodeCode() {
   const code = document.getElementById('decode-input').value.trim();
   if (!code) return;
   try {
-    const res  = await fetch('/api/decode', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code}) });
+    const res  = await fetch('/api/decode', { method:'POST', headers: getAuthHeaders(), body:JSON.stringify({code}) });
+    if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderSlotCards(data.slots, 'decode-cards');
-    document.getElementById('decode-output').style.display = 'flex';
+    document.getElementById('decode-output').style.display = 'block';
   } catch(err) {
     document.getElementById('decode-error').textContent = 'Error: ' + err.message;
   }
@@ -1258,14 +1260,12 @@ function updateLivePreview() {
   }).join('');
 }
 
-// ── MOVE PREVIEW ──
-const BADGE_COLORS = { SKILL:'#60a5fa', MELEE:'#f87171', SPECIAL:'#c084fc', CHASE:'#4ade80', AWAKENING:'#fbbf24' };
-
+// ── MOVE PREVIEW (anime cards for decode) ──
 function renderSlotCards(slots, containerId) {
   const cardsEl = document.getElementById(containerId);
-  cardsEl.innerHTML = slots.map(slot => {
-    const type  = slot.K_NAME || 'SKILL';
-    const color = BADGE_COLORS[type] || '#a78bfa';
+  cardsEl.innerHTML = slots.map((slot, i) => {
+    const type = (slot.K_NAME || 'SKILL').toUpperCase();
+    const meta = SLOT_META[type] || DEFAULT_META;
     let dmg = '—', stun = '—', force = '—';
     try {
       const parsed = JSON.parse(slot.DATA);
@@ -1274,15 +1274,30 @@ function renderSlotCards(slots, containerId) {
       if (hitbox) { dmg = hitbox.DAMAGE ?? '—'; stun = hitbox.STUN ?? '—'; }
       if (velo)   { force = velo.FORCE ?? '—'; }
     } catch(e) {}
-    return `<div class="preview-card">
-      <span class="slot-badge slot-${type}" style="flex-shrink:0">${type}</span>
-      <div class="preview-card-info">
-        <div class="preview-move-name">${escHtml(slot.NAME || 'Unnamed')}</div>
-        <div class="preview-stats">
-          <span class="preview-stat">DMG <span style="color:${color}">${dmg}</span></span>
-          <span class="preview-stat">STUN <span>${stun}s</span></span>
-          <span class="preview-stat">CD <span>${slot.COOLDOWN ?? '—'}s</span></span>
-          <span class="preview-stat">FORCE <span>${force}</span></span>
+    return `<div class="live-card" style="--c-glow:${meta.glow};--c-border:${meta.border};--c-accent:${meta.accent}">
+      <div class="live-card-header" style="background:${meta.g}" data-symbol="${meta.symbol}">
+        <span class="live-card-type">${type}</span>
+        <span class="live-card-index">SLOT ${i+1}</span>
+      </div>
+      <div class="live-card-body">
+        <div class="live-card-name">${escHtml(slot.NAME || 'Unnamed')}</div>
+        <div class="live-card-stats">
+          <div class="live-stat">
+            <span class="live-stat-label">DAMAGE</span>
+            <span class="live-stat-value" style="color:${meta.accent};text-shadow:0 0 14px ${meta.glow}">${dmg}</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-label">STUN</span>
+            <span class="live-stat-value">${stun}s</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-label">COOLDOWN</span>
+            <span class="live-stat-value">${slot.COOLDOWN ?? '—'}s</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-label">FORCE</span>
+            <span class="live-stat-value">${force}</span>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1293,7 +1308,8 @@ async function renderMovePreview(code) {
   const previewEl = document.getElementById('move-preview');
   previewEl.style.display = 'none';
   try {
-    const res  = await fetch('/api/decode', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code }) });
+    const res  = await fetch('/api/decode', { method:'POST', headers: getAuthHeaders(), body: JSON.stringify({ code }) });
+    if (res.status === 401) return;
     const data = await res.json();
     if (data.error || !data.slots) return;
     renderSlotCards(data.slots, 'preview-cards');
@@ -1303,6 +1319,17 @@ async function renderMovePreview(code) {
 
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getAuthHeaders() {
+  const token = localStorage.getItem('jjs_api_token') || '';
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+}
+
+function handleUnauth() {
+  localStorage.removeItem('jjs_beta_auth');
+  localStorage.removeItem('jjs_api_token');
+  window.location.href = '/';
 }
 
 // ── SOUNDS (Web Audio API, no external files) ──
@@ -1400,6 +1427,7 @@ async function submitGate() {
     const data = await res.json();
     if (data.ok) {
       localStorage.setItem(GATE_KEY, JSON.stringify({ ok: true, ts: Date.now() }));
+      if (data.token) localStorage.setItem('jjs_api_token', data.token);
       soundUnlock();
       const overlay = document.getElementById('gate-overlay');
       overlay.classList.add('fade-out');

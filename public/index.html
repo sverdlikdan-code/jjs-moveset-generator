@@ -357,6 +357,7 @@ async function submitGate() {
     const data = await res.json();
     if (data.ok) {
       localStorage.setItem(GATE_KEY, JSON.stringify({ ok: true, ts: Date.now() }));
+      if (data.token) localStorage.setItem('jjs_api_token', data.token);
       soundUnlock();
       const overlay = document.getElementById('gate-overlay');
       overlay.classList.add('fade-out');
