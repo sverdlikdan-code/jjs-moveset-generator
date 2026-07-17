@@ -720,6 +720,31 @@ select {
 }
 .live-stat-value.flash { animation: statFlash 0.28s ease; }
 
+/* ── STAT BARS ── */
+.live-stat-bar {
+  height: 3px; margin-top: 5px;
+  background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden;
+}
+.live-stat-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--c-accent, #60a5fa);
+  box-shadow: 0 0 6px var(--c-glow, rgba(96,165,250,0.5));
+  width: 0%;
+  transition: width 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ── PARTICLES ── */
+@keyframes particle-fly {
+  0%   { transform: rotate(var(--a)) translateX(0) scale(1); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--d)) scale(0); opacity: 0; }
+}
+.particle {
+  position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  top: 50%; left: 50%; margin: -2px;
+  pointer-events: none; z-index: 20;
+  animation: particle-fly 0.55s ease-out forwards;
+}
+
 /* decode panel legacy */
 .move-preview {
   margin-top: 16px;
@@ -1270,27 +1295,48 @@ function updateLivePreview() {
           <div class="live-stat">
             <span class="live-stat-label">DAMAGE</span>
             <span class="live-stat-value" style="color:${meta.accent};text-shadow:0 0 14px ${meta.glow}">${m.damage || 0}</span>
+            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.damage||0)/150*100).toFixed(1)}"></div></div>
           </div>
           <div class="live-stat">
             <span class="live-stat-label">STUN</span>
             <span class="live-stat-value">${m.stun || 0}s</span>
+            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.stun||0)/5*100).toFixed(1)}"></div></div>
           </div>
           <div class="live-stat">
             <span class="live-stat-label">COOLDOWN</span>
             <span class="live-stat-value">${m.cooldown || 0}s</span>
+            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.cooldown||0)/20*100).toFixed(1)}"></div></div>
           </div>
           <div class="live-stat">
             <span class="live-stat-label">FORCE</span>
             <span class="live-stat-value">${m.force || 0}</span>
+            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.force||0)/200*100).toFixed(1)}"></div></div>
           </div>
         </div>
       </div>
     </div>`;
   }).join('');
   requestAnimationFrame(() => {
+    const PARTICLE_COLORS = ['#fff','#c084fc','#60a5fa','#f87171','#fbbf24'];
     document.querySelectorAll('#live-preview-cards .live-card').forEach(card => {
+      // 1. slash
       card.classList.add('slashing');
       setTimeout(() => card.classList.remove('slashing'), 420);
+      // 2. animated bars
+      card.querySelectorAll('.live-stat-bar-fill').forEach(fill => {
+        const pct = fill.getAttribute('data-pct') || '0';
+        requestAnimationFrame(() => { fill.style.width = pct + '%'; });
+      });
+      // 3. particles from card center
+      for (let i = 0; i < 10; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const angle = (i / 10) * 360 + Math.random() * 36;
+        const dist = (28 + Math.random() * 38) + 'px';
+        p.style.cssText = `--a:${angle}deg;--d:${dist};background:${PARTICLE_COLORS[i%PARTICLE_COLORS.length]};animation-delay:${Math.random()*60}ms`;
+        card.appendChild(p);
+        setTimeout(() => p.remove(), 650);
+      }
     });
   });
 }
