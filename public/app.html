@@ -1074,7 +1074,35 @@ function slotBadgeHtml(id) {
   return `<span class="slot-badge slot-${val}" id="badge-${id}">${val}</span>`;
 }
 
+function getUsedSlotTypes() {
+  const used = new Set();
+  for (let i = 1; i <= moveCount; i++) {
+    const el = document.getElementById(`slotType-${i}`);
+    if (el) used.add(el.value);
+  }
+  return used;
+}
+
+function updateAllSlotDropdowns() {
+  const used = getUsedSlotTypes();
+  for (let i = 1; i <= moveCount; i++) {
+    const sel = document.getElementById(`slotType-${i}`);
+    if (!sel) continue;
+    const current = sel.value;
+    sel.innerHTML = SLOT_TYPES
+      .filter(t => t === current || !used.has(t))
+      .map(t => `<option value="${t}"${t === current ? ' selected' : ''}>${t}</option>`)
+      .join('');
+  }
+  const btn = document.querySelector('.btn-add');
+  if (btn) btn.style.display = used.size >= SLOT_TYPES.length ? 'none' : '';
+}
+
 function addMove() {
+  const used = getUsedSlotTypes();
+  const available = SLOT_TYPES.filter(t => !used.has(t));
+  if (available.length === 0) return;
+  const defaultType = available[0];
   moveCount++;
   const id = moveCount;
   const div = document.createElement('div');
@@ -1082,7 +1110,7 @@ function addMove() {
   div.id = `move-${id}`;
   div.innerHTML = `
     <div class="card-header">
-      <span class="card-title">Move <span class="move-number">#${id}</span><span class="slot-badge slot-SKILL" id="badge-${id}">SKILL</span></span>
+      <span class="card-title">Move <span class="move-number">#${id}</span><span class="slot-badge slot-${defaultType}" id="badge-${id}">${defaultType}</span></span>
       <button class="btn btn-danger" onclick="removeMove(${id})">✕ Remove</button>
     </div>
     <div class="grid2" style="margin-bottom:12px;">
@@ -1093,7 +1121,7 @@ function addMove() {
       <div>
         <label data-tip="Which move slot this is. SKILL = your main ability. EVASIVE = dodge move. SPECIAL = strong attack. MELEE = basic punch. AWAKENING = ultimate.">Slot Type</label>
         <select id="slotType-${id}" onchange="updateBadge(${id})">
-          ${SLOT_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          ${available.map(t => `<option value="${t}">${t}</option>`).join('')}
         </select>
       </div>
     </div>
@@ -1151,10 +1179,12 @@ function updateBadge(id) {
   if (!badge) return;
   badge.className = `slot-badge slot-${val}`;
   badge.textContent = val;
+  updateAllSlotDropdowns();
 }
 
 function removeMove(id) {
   document.getElementById(`move-${id}`)?.remove();
+  updateAllSlotDropdowns();
   updateLivePreview();
 }
 
