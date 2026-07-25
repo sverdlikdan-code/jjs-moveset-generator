@@ -1146,6 +1146,40 @@ document.addEventListener('click', e => {
   soundClick();
 });
 
+function soundPageSwitch() {
+  try {
+    const ctx = getAudio();
+    const dur = 0.18;
+    const bufSize = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(3000, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + dur);
+    filter.Q.value = 1.5;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    src.start(); src.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+document.querySelectorAll('a[href]').forEach(a => {
+  const href = a.getAttribute('href');
+  if (!href || href.startsWith('#') || href.startsWith('javascript')) return;
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    soundPageSwitch();
+    setTimeout(() => { window.location.href = href; }, 160);
+  });
+});
+
 loadLibrary('likes');
 </script>
 </body>
