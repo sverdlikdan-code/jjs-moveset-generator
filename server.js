@@ -1,7 +1,7 @@
 const express = require('express');
 const helmet = require('helmet');
 const { compress, decompress } = require('@mongodb-js/zstd');
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 const { rateLimit } = require('express-rate-limit');
 const crypto = require('crypto');
 const path = require('path');
@@ -17,7 +17,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", "https://*.supabase.co", "https://cloud.umami.is"],
+      connectSrc: ["'self'", "https://cloud.umami.is"],
     }
   },
   crossOriginEmbedderPolicy: false,
@@ -25,9 +25,43 @@ app.use(helmet({
 app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── DATABASE ──
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('.railway.internal')
+    ? { rejectUnauthorized: false }
+    : false
+});
+
+async function initDB() {
+  await pool.query(`
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+    CREATE TABLE IF NOT EXISTS codes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      character TEXT NOT NULL DEFAULT 'Unknown',
+      code TEXT NOT NULL,
+      tags TEXT[] DEFAULT '{}',
+      author TEXT DEFAULT 'Anonymous',
+      likes INTEGER DEFAULT 0,
+      copies INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS comments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code_id UUID REFERENCES codes(id) ON DELETE CASCADE,
+      text TEXT NOT NULL,
+      author TEXT DEFAULT 'Anonymous',
+      likes INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('DB schema ready');
+}
+
 // ── RATE LIMITING ──
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
@@ -63,18 +97,11 @@ function requireToken(req, res, next) {
   if (token !== VALID_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
   next();
 }
-// Apply to all API routes except /api/auth itself
 app.use('/api/library', requireToken);
 app.use('/api/generate', requireToken);
 app.use('/api/decode', requireToken);
 
-// Supabase client (service role — server side only)
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SECRET_KEY || ''
-);
-
-// Build a JJS slot object from simple form input
+// ── GENERATE ──
 function buildSlot(input) {
   return {
     K_NAME: input.slotType || 'SKILL',
@@ -113,7 +140,6 @@ function buildSlot(input) {
   };
 }
 
-// ── GENERATE ──
 app.post('/api/generate', async (req, res) => {
   try {
     const { moves } = req.body;
@@ -171,35 +197,32 @@ app.post('/api/auth', authLimiter, (req, res) => {
 app.get('/api/library', async (req, res) => {
   try {
     const SORT_MAP = { likes: 'likes', copies: 'copies', new: 'created_at' };
-    const column = SORT_MAP[req.query.sort] || 'likes';
-    let query = supabase
-      .from('codes')
-      .select('id, name, character, tags, author, likes, copies, created_at')
-      .order(column, { ascending: false })
-      .limit(50);
+    const col = SORT_MAP[req.query.sort] || 'likes';
+    const params = [];
+    let where = '';
     if (req.query.author) {
-      query = query.ilike('author', req.query.author);
+      params.push(req.query.author);
+      where = `WHERE author ILIKE $1`;
     }
-    const { data, error } = await query;
-    if (error) throw error;
-    res.json({ codes: data });
+    const { rows } = await pool.query(
+      `SELECT id, name, character, tags, author, likes, copies, created_at
+       FROM codes ${where}
+       ORDER BY ${col} DESC LIMIT 50`,
+      params
+    );
+    res.json({ codes: rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── LIBRARY: get single code (with the actual code string) ──
+// ── LIBRARY: get single code ──
 app.get('/api/library/:id', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('codes')
-      .select('*')
-      .eq('id', req.params.id)
-      .single();
-    if (error) throw error;
-    // bump copies counter
-    await supabase.from('codes').update({ copies: (data.copies || 0) + 1 }).eq('id', req.params.id);
-    res.json(data);
+    const { rows } = await pool.query('SELECT * FROM codes WHERE id = $1', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    await pool.query('UPDATE codes SET copies = copies + 1 WHERE id = $1', [req.params.id]);
+    res.json(rows[0]);
   } catch (err) {
     res.status(404).json({ error: 'Not found' });
   }
@@ -208,10 +231,12 @@ app.get('/api/library/:id', async (req, res) => {
 // ── LIBRARY: like ──
 app.post('/api/library/:id/like', async (req, res) => {
   try {
-    const { data } = await supabase.from('codes').select('likes').eq('id', req.params.id).single();
-    const { error } = await supabase.from('codes').update({ likes: (data.likes || 0) + 1 }).eq('id', req.params.id);
-    if (error) throw error;
-    res.json({ ok: true, likes: (data.likes || 0) + 1 });
+    const { rows } = await pool.query(
+      'UPDATE codes SET likes = likes + 1 WHERE id = $1 RETURNING likes',
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true, likes: rows[0].likes });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -222,15 +247,18 @@ app.post('/api/library', async (req, res) => {
   try {
     const { name, character, code, tags, author } = req.body;
     if (!name || !code) return res.status(400).json({ error: 'name and code required' });
-    const { data, error } = await supabase.from('codes').insert([{
-      name: name.slice(0, 80),
-      character: (character || 'Unknown').slice(0, 60),
-      code,
-      tags: Array.isArray(tags) ? tags.slice(0, 5) : [],
-      author: (author || 'Anonymous').slice(0, 40)
-    }]).select().single();
-    if (error) throw error;
-    res.json({ ok: true, id: data.id });
+    const { rows } = await pool.query(
+      `INSERT INTO codes (name, character, code, tags, author)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [
+        name.slice(0, 80),
+        (character || 'Unknown').slice(0, 60),
+        code,
+        Array.isArray(tags) ? tags.slice(0, 5) : [],
+        (author || 'Anonymous').slice(0, 40)
+      ]
+    );
+    res.json({ ok: true, id: rows[0].id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -239,14 +267,13 @@ app.post('/api/library', async (req, res) => {
 // ── COMMENTS: get for code ──
 app.get('/api/library/:id/comments', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('comments')
-      .select('id, text, author, likes, created_at')
-      .eq('code_id', req.params.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) throw error;
-    res.json({ comments: data });
+    const { rows } = await pool.query(
+      `SELECT id, text, author, likes, created_at
+       FROM comments WHERE code_id = $1
+       ORDER BY created_at DESC LIMIT 50`,
+      [req.params.id]
+    );
+    res.json({ comments: rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -257,14 +284,12 @@ app.post('/api/library/:id/comments', async (req, res) => {
   try {
     const { text, author } = req.body;
     if (!text || text.trim().length === 0) return res.status(400).json({ error: 'text required' });
-    const { data, error } = await supabase.from('comments').insert([{
-      code_id: req.params.id,
-      text: text.slice(0, 500),
-      author: (author || 'Anonymous').slice(0, 40),
-      likes: 0
-    }]).select().single();
-    if (error) throw error;
-    res.json({ ok: true, comment: data });
+    const { rows } = await pool.query(
+      `INSERT INTO comments (code_id, text, author)
+       VALUES ($1, $2, $3) RETURNING id, text, author, likes, created_at`,
+      [req.params.id, text.slice(0, 500), (author || 'Anonymous').slice(0, 40)]
+    );
+    res.json({ ok: true, comment: rows[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -273,14 +298,21 @@ app.post('/api/library/:id/comments', async (req, res) => {
 // ── COMMENTS: like comment ──
 app.post('/api/library/comments/:commentId/like', async (req, res) => {
   try {
-    const { data } = await supabase.from('comments').select('likes').eq('id', req.params.commentId).single();
-    const { error } = await supabase.from('comments').update({ likes: (data.likes || 0) + 1 }).eq('id', req.params.commentId);
-    if (error) throw error;
-    res.json({ ok: true, likes: (data.likes || 0) + 1 });
+    const { rows } = await pool.query(
+      'UPDATE comments SET likes = likes + 1 WHERE id = $1 RETURNING likes',
+      [req.params.commentId]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true, likes: rows[0].likes });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 4242;
-app.listen(PORT, () => console.log(`JJS Generator: http://localhost:${PORT}`));
+initDB().then(() => {
+  app.listen(PORT, () => console.log(`JJS Generator: http://localhost:${PORT}`));
+}).catch(err => {
+  console.error('DB init failed:', err.message);
+  process.exit(1);
+});
