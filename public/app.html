@@ -1095,7 +1095,10 @@ function updateAllSlotDropdowns() {
       .join('');
   }
   const btn = document.querySelector('.btn-add');
-  if (btn) btn.style.display = used.size >= SLOT_TYPES.length ? 'none' : '';
+  const wasVisible = btn && btn.style.display !== 'none';
+  const nowFull = used.size >= SLOT_TYPES.length;
+  if (btn) btn.style.display = nowFull ? 'none' : '';
+  if (nowFull && wasVisible) soundBuildComplete();
 }
 
 function addMove() {
@@ -1170,6 +1173,7 @@ function addMove() {
     </div>
   `;
   document.getElementById('moves-list').appendChild(div);
+  soundAddMove();
   updateLivePreview();
 }
 
@@ -1179,10 +1183,12 @@ function updateBadge(id) {
   if (!badge) return;
   badge.className = `slot-badge slot-${val}`;
   badge.textContent = val;
+  soundSlotChange();
   updateAllSlotDropdowns();
 }
 
 function removeMove(id) {
+  soundRemove();
   document.getElementById(`move-${id}`)?.remove();
   updateAllSlotDropdowns();
   updateLivePreview();
@@ -1262,6 +1268,7 @@ async function decodeCode() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     lastDecodedSlots = data.slots;
+    soundDecode();
     renderSlotCards(data.slots, 'decode-cards');
     document.getElementById('decode-output').style.display = 'block';
   } catch(err) {
@@ -1319,6 +1326,7 @@ function loadDecodedIntoGenerator() {
 }
 
 function switchTab(name, el) {
+  soundTabSwitch();
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${name}`).classList.add('active');
@@ -1392,6 +1400,7 @@ function setLang(code) {
   document.getElementById('lang-flag-current').textContent = l.flag;
   document.getElementById('lang-name-current').textContent = l.name;
   document.getElementById('lang-dropdown').classList.remove('open');
+  soundLangChange();
   buildLangDropdown();
   applyLang();
 }
@@ -1692,6 +1701,55 @@ function soundPageSwitch() {
     src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
     src.start(); src.stop(ctx.currentTime + dur);
   } catch(e) {}
+}
+
+function soundAddMove() {
+  playTone(350, 'triangle', 0.12, 0.18, true);
+  setTimeout(() => playTone(550, 'triangle', 0.12, 0.16, true), 70);
+  setTimeout(() => playTone(750, 'sine',     0.18, 0.14, true), 140);
+}
+
+function soundRemove() {
+  playTone(320, 'sawtooth', 0.08, 0.12, true);
+  setTimeout(() => playTone(190, 'sawtooth', 0.06, 0.1, true), 80);
+}
+
+function soundTabSwitch() {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(520, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(360, ctx.currentTime + 0.13);
+    gain.gain.setValueAtTime(0.09, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+    osc.start(); osc.stop(ctx.currentTime + 0.16);
+  } catch(e) {}
+}
+
+function soundDecode() {
+  playTone(440, 'sine', 0.22, 0.1, true);
+  setTimeout(() => playTone(554, 'sine', 0.22, 0.1, true), 90);
+  setTimeout(() => playTone(659, 'sine', 0.28, 0.1, true), 180);
+}
+
+function soundBuildComplete() {
+  [262, 330, 392, 523, 659, 784].forEach((f, i) => {
+    setTimeout(() => playTone(f, 'sine', 0.28, 0.18, true), i * 65);
+  });
+  setTimeout(() => playTone(1047, 'triangle', 0.45, 0.22, true), 420);
+}
+
+function soundSlotChange() {
+  playTone(500, 'sine', 0.07, 0.09, true);
+  setTimeout(() => playTone(620, 'sine', 0.08, 0.08, true), 55);
+}
+
+function soundLangChange() {
+  playTone(660, 'sine', 0.06, 0.09, true);
+  setTimeout(() => playTone(880, 'sine', 0.08, 0.08, true), 65);
 }
 
 // ── PASSWORD GATE ──
