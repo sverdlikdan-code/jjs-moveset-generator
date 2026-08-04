@@ -548,6 +548,32 @@ select {
   box-shadow: 0 0 16px rgba(74,222,128,0.25);
 }
 
+.share-btn {
+  margin-top: 8px;
+  background: rgba(124,58,237,0.12);
+  color: var(--accent-light);
+  border: 1px solid rgba(124,58,237,0.35);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  width: 100%;
+}
+.share-btn:hover {
+  background: rgba(124,58,237,0.25);
+  box-shadow: 0 0 16px rgba(124,58,237,0.3);
+}
+.share-btn.shared {
+  background: rgba(124,58,237,0.2);
+  color: #c084fc;
+  border-color: rgba(124,58,237,0.6);
+  box-shadow: 0 0 16px rgba(124,58,237,0.3);
+}
+
 /* ── GEN 2-COLUMN LAYOUT ── */
 .gen-layout {
   display: grid;
@@ -1024,6 +1050,7 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
           <div class="result-label">Your JJS Import Code — paste in Skill Builder</div>
           <div class="code-output" id="code-output"></div>
           <button class="copy-btn" id="copy-btn" onclick="copyCode()">⎘ Copy Code</button>
+          <button class="share-btn" id="share-btn" onclick="shareCode()">🔗 Share Build</button>
         </div>
       </div>
       <!-- RIGHT: live preview panel -->
@@ -1253,6 +1280,37 @@ function copyCode() {
   btn.textContent = '✓ Copied!';
   btn.classList.add('copied');
   setTimeout(() => { btn.textContent = '⎘ Copy Code'; btn.classList.remove('copied'); }, 2000);
+}
+
+function shareCode() {
+  const code = document.getElementById('code-output').textContent;
+  if (!code) return;
+  const url = window.location.origin + window.location.pathname + '?share=' + encodeURIComponent(code);
+  navigator.clipboard.writeText(url);
+  playTone(660, 'sine', 0.08, 0.18, true);
+  setTimeout(() => playTone(880, 'sine', 0.08, 0.16, true), 70);
+  setTimeout(() => playTone(1100, 'triangle', 0.1, 0.14, true), 140);
+  const btn = document.getElementById('share-btn');
+  btn.textContent = '✓ Link Copied!';
+  btn.classList.add('shared');
+  setTimeout(() => { btn.textContent = '🔗 Share Build'; btn.classList.remove('shared'); }, 2500);
+}
+
+function loadSharedCode() {
+  const params = new URLSearchParams(window.location.search);
+  const shared = params.get('share');
+  if (!shared) return;
+  // clean URL without reloading
+  window.history.replaceState({}, '', window.location.pathname);
+  // switch to decode tab
+  const decodeTabBtn = document.querySelectorAll('.tab')[1];
+  switchTab('decode', decodeTabBtn);
+  // fill and auto-decode
+  const inp = document.getElementById('decode-input');
+  if (inp) {
+    inp.value = shared;
+    decodeCode();
+  }
 }
 
 let lastDecodedSlots = [];
@@ -1850,6 +1908,7 @@ if (initLang) {
 applyLang();
 
 addMove();
+loadSharedCode();
 </script>
 </body>
 </html>
