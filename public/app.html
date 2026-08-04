@@ -1127,6 +1127,35 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
 .timeline-legend .tl-l-velo::before   { background: rgba(251,146,60,0.8); }
 .timeline-legend .tl-l-wait::before   { background: rgba(124,58,237,0.7); }
 
+/* ── HEADER NAV ── */
+.header-nav { display: flex; align-items: center; gap: 10px; }
+.header-nav-lib {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.header-nav-yt {
+  padding: 6px 14px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* ── MOBILE ── */
 @media (max-width: 600px) {
   header { padding: 16px; }
@@ -1135,6 +1164,9 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
   .container { padding: 20px 12px 60px; }
   .btn-generate { width: 100%; }
   .lang-btn .lang-name { display: none; }
+  .header-nav-yt { display: none; }
+  .header-nav-lib { padding: 6px 10px; }
+  .nav-text { display: none; }
 }
 </style>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="2b526684-82f7-4550-8fc6-bebbc645cbfb"></script>
@@ -1158,9 +1190,9 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
         <p>JJS — Custom Skill Builder</p>
       </div>
     </a>
-    <div style="display:flex;align-items:center;gap:10px">
-      <a href="/library.html" style="padding:6px 14px;background:transparent;border:1px solid rgba(124,58,237,0.3);border-radius:8px;color:#64748b;font-size:0.8rem;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='#7c3aed';this.style.color='#c084fc'" onmouseout="this.style.borderColor='rgba(124,58,237,0.3)';this.style.color='#64748b'">📚 Library</a>
-      <a href="https://www.youtube.com/@RedInkJJS" target="_blank" rel="noopener" style="padding:6px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#64748b;font-size:0.8rem;text-decoration:none;transition:all 0.2s;display:flex;align-items:center;gap:5px" onmouseover="this.style.borderColor='#ef4444';this.style.color='#fca5a5'" onmouseout="this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#64748b'">▶ RedInk</a>
+    <div class="header-nav">
+      <a href="/library.html" class="header-nav-lib" onmouseover="this.style.borderColor='#7c3aed';this.style.color='#c084fc'" onmouseout="this.style.borderColor='rgba(124,58,237,0.3)';this.style.color='#64748b'">📚 <span class="nav-text">Library</span></a>
+      <a href="https://www.youtube.com/@RedInkJJS" target="_blank" rel="noopener" class="header-nav-yt" onmouseover="this.style.borderColor='#ef4444';this.style.color='#fca5a5'" onmouseout="this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#64748b'">▶ RedInk</a>
       <div class="lang-selector">
         <button class="lang-btn" onclick="toggleLangDropdown()" id="lang-btn-main">
           <span id="lang-flag-current">🇺🇸</span>

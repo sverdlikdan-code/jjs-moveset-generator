@@ -501,11 +501,42 @@ header::after {
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ── CHARACTER FILTER ── */
+.char-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.char-filter-btn {
+  padding: 5px 12px;
+  background: var(--bg-card);
+  border: 1px solid rgba(124,58,237,0.15);
+  border-radius: 16px;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.3px;
+}
+.char-filter-btn:hover { border-color: rgba(124,58,237,0.4); color: var(--text); }
+.char-filter-btn.active {
+  background: rgba(124,58,237,0.15);
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
 @media (max-width: 600px) {
   header { padding: 14px 16px; }
   .container { padding: 20px 16px; }
   .codes-grid { grid-template-columns: 1fr; }
   .logo h1 { font-size: 1.1rem; }
+  .btn-back { display: none; }
 }
 
 /* ── CHARACTER AVATAR CARD ── */
@@ -787,6 +818,8 @@ header::after {
     <button class="sort-btn" onclick="loadLibrary('new', this)">✨ New</button>
   </div>
 
+  <div class="char-filter-bar" id="char-filter-bar"></div>
+
   <div id="codes-grid" class="codes-grid">
     <div class="loader"><span></span><span></span><span></span></div>
   </div>
@@ -858,6 +891,8 @@ header::after {
 <script>
 let currentModal = null;
 let likedIds = JSON.parse(localStorage.getItem('jjs_liked') || '[]');
+let allCodes = [];
+let activeCharFilter = null;
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -879,7 +914,10 @@ async function loadLibrary(sort = 'likes', btn) {
     if (res.status === 401) { handleUnauth(); return; }
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    allCodes = data.codes || [];
+    activeCharFilter = null;
     renderCodes(data.codes, sort);
+    buildCharFilter(data.codes);
   } catch (e) {
     document.getElementById('codes-grid').innerHTML = `
       <div class="empty-state">
@@ -937,6 +975,41 @@ function renderCodes(codes, sort) {
       </div>
     </div>
   `}).join('');
+}
+
+function buildCharFilter(codes) {
+  const bar = document.getElementById('char-filter-bar');
+  if (!bar) return;
+  const chars = [...new Set((codes || []).map(c => c.character).filter(Boolean))];
+  if (chars.length < 2) { bar.innerHTML = ''; return; }
+  bar.innerHTML = chars.map(ch => {
+    const theme = getCharTheme(ch);
+    const label = ch.split('(')[0].trim().split(' ')[0];
+    return `<button class="char-filter-btn" data-char="${escHtml(ch)}"><span style="color:${theme.color}">${theme.kanji}</span>${escHtml(label)}</button>`;
+  }).join('');
+  bar.querySelectorAll('.char-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const char = btn.dataset.char;
+      if (activeCharFilter === char) {
+        activeCharFilter = null;
+        bar.querySelectorAll('.char-filter-btn').forEach(b => b.classList.remove('active'));
+        renderCodes(allCodes, getCurrentSort());
+      } else {
+        activeCharFilter = char;
+        bar.querySelectorAll('.char-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCodes(allCodes.filter(c => c.character === char), getCurrentSort());
+      }
+    });
+  });
+}
+
+function getCurrentSort() {
+  const active = document.querySelector('.sort-btn.active');
+  if (!active) return 'likes';
+  if (active.textContent.includes('Used')) return 'copies';
+  if (active.textContent.includes('New')) return 'new';
+  return 'likes';
 }
 
 async function openCode(id) {
