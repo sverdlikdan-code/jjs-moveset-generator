@@ -983,6 +983,85 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
 .lang-flag { font-size: 1.1rem; }
 .lang-name { font-size: 0.82rem; }
 
+/* ── EMPTY STATE ── */
+.moves-empty-state {
+  text-align: center;
+  padding: 32px 20px;
+  border: 1px dashed rgba(124,58,237,0.25);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.moves-empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.moves-empty-title { color: #e2e8f0; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+.moves-empty-sub { color: #64748b; font-size: 0.82rem; line-height: 1.5; max-width: 320px; margin: 0 auto 18px; }
+.btn-example {
+  background: rgba(124,58,237,0.18);
+  color: #c084fc;
+  border: 1px solid rgba(124,58,237,0.45);
+  padding: 9px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+.btn-example:hover { background: rgba(124,58,237,0.3); box-shadow: 0 0 16px rgba(124,58,237,0.3); }
+
+/* ── ONBOARDING BAR ── */
+.onboard-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: rgba(124,58,237,0.06);
+  border-bottom: 1px solid rgba(124,58,237,0.15);
+  padding: 10px 20px;
+  flex-wrap: wrap;
+}
+.onboard-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+}
+.onboard-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(124,58,237,0.25);
+  border: 1px solid rgba(124,58,237,0.5);
+  color: #c084fc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.onboard-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+.onboard-label strong {
+  display: block;
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.onboard-arrow {
+  color: rgba(124,58,237,0.4);
+  font-size: 1rem;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .onboard-arrow { display: none; }
+  .onboard-step { padding: 4px 10px; }
+  .onboard-bar { gap: 4px; justify-content: flex-start; }
+}
+
 /* ── MOBILE ── */
 @media (max-width: 600px) {
   header { padding: 16px; }
@@ -1028,6 +1107,23 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
   </div>
 </header>
 
+<div class="onboard-bar">
+  <div class="onboard-step">
+    <div class="onboard-num">1</div>
+    <div class="onboard-label"><strong>Pick your moves</strong>Choose skills & order</div>
+  </div>
+  <span class="onboard-arrow">→</span>
+  <div class="onboard-step">
+    <div class="onboard-num">2</div>
+    <div class="onboard-label"><strong>Generate Code</strong>Get your unique combo</div>
+  </div>
+  <span class="onboard-arrow">→</span>
+  <div class="onboard-step">
+    <div class="onboard-num">3</div>
+    <div class="onboard-label"><strong>Paste in JJS</strong>Use in-game & dominate</div>
+  </div>
+</div>
+
 <div class="container">
   <div class="tabs">
     <button class="tab active" onclick="switchTab('generate', this)">⚔ Generate Code</button>
@@ -1039,7 +1135,14 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
     <div class="gen-layout">
       <!-- LEFT: form -->
       <div class="gen-form">
-        <div id="moves-list"></div>
+        <div id="moves-list">
+          <div class="moves-empty-state" id="moves-empty">
+            <div class="moves-empty-icon">🥋</div>
+            <div class="moves-empty-title">Build your moveset</div>
+            <div class="moves-empty-sub">Add up to 6 slots: your main SKILL, a quick MELEE, an EVASIVE dodge, and more. Each slot is one move your character can use in battle.</div>
+            <button class="btn-example" onclick="loadExample()">⚡ Try Example Build</button>
+          </div>
+        </div>
         <button class="btn-add" onclick="addMove()">+ Add Move</button>
         <div class="gen-actions">
           <button class="btn btn-generate" onclick="generateCode()">Generate Code</button>
@@ -1126,12 +1229,23 @@ function updateAllSlotDropdowns() {
   const nowFull = used.size >= SLOT_TYPES.length;
   if (btn) btn.style.display = nowFull ? 'none' : '';
   if (nowFull && wasVisible) soundBuildComplete();
+  // restore empty state if all moves removed
+  const list = document.getElementById('moves-list');
+  if (list && used.size === 0 && !document.getElementById('moves-empty')) {
+    list.innerHTML = `<div class="moves-empty-state" id="moves-empty">
+      <div class="moves-empty-icon">🥋</div>
+      <div class="moves-empty-title">Build your moveset</div>
+      <div class="moves-empty-sub">Add up to 6 slots: your main SKILL, a quick MELEE, an EVASIVE dodge, and more. Each slot is one move your character can use in battle.</div>
+      <button class="btn-example" onclick="loadExample()">⚡ Try Example Build</button>
+    </div>`;
+  }
 }
 
 function addMove() {
   const used = getUsedSlotTypes();
   const available = SLOT_TYPES.filter(t => !used.has(t));
   if (available.length === 0) return;
+  document.getElementById('moves-empty')?.remove();
   const defaultType = available[0];
   moveCount++;
   const id = moveCount;
@@ -1311,6 +1425,34 @@ function loadSharedCode() {
     inp.value = shared;
     decodeCode();
   }
+}
+
+function loadExample() {
+  // clear existing moves
+  document.getElementById('moves-list').innerHTML = '';
+  moveCount = 0;
+  // add 3 preset moves
+  addMove(); // id=1 → SKILL
+  addMove(); // id=2 → MELEE
+  addMove(); // id=3 → EVASIVE
+
+  const preset = [
+    { id:1, name:'Cursed Strike', slot:'SKILL',   dmg:40, stun:0.7, cd:8,  atk:'Normal',      fz:60, fy:15, dur:0.6, block:true  },
+    { id:2, name:'Rush Combo',    slot:'MELEE',   dmg:18, stun:0.3, cd:2,  atk:'Heavy',       fz:35, fy:0,  dur:0.3, block:true  },
+    { id:3, name:'Shadow Step',   slot:'EVASIVE', dmg:8,  stun:0.1, cd:4,  atk:'Normal',      fz:20, fy:0,  dur:0.25, block:false },
+  ];
+  preset.forEach(({ id, name, slot, dmg, stun, cd, atk, fz, fy, dur, block }) => {
+    const s = document.getElementById(`slotType-${id}`);
+    if (s) { s.value = slot; updateBadge(id); }
+    const set = (field, val) => { const el = document.getElementById(`${field}-${id}`); if (el) el.value = val; };
+    set('name', name); set('damage', dmg); set('stun', stun); set('cooldown', cd);
+    set('force', fz); set('forceY', fy); set('duration', dur);
+    const at = document.getElementById(`attackType-${id}`);
+    if (at) at.value = atk;
+    const bl = document.getElementById(`blockable-${id}`);
+    if (bl) bl.checked = block;
+  });
+  updateLivePreview();
 }
 
 let lastDecodedSlots = [];
