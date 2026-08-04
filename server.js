@@ -309,6 +309,44 @@ app.post('/api/library/comments/:commentId/like', async (req, res) => {
   }
 });
 
+// ── TEMP: one-time migration endpoint (remove after use) ──
+const MIGRATION_TOKEN = process.env.MIGRATION_TOKEN || '';
+if (MIGRATION_TOKEN) {
+  const { createClient: sbCreate } = require('@supabase/supabase-js');
+  app.post('/api/_migrate', async (req, res) => {
+    const auth = req.headers['authorization'] || '';
+    if (auth !== `Bearer ${MIGRATION_TOKEN}`) return res.status(401).json({ error: 'nope' });
+    const sb = sbCreate(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY);
+    const { data: codes } = await sb.from('codes').select('*').order('created_at').limit(500);
+    let ok = 0, fail = 0;
+    for (const c of codes || []) {
+      try {
+        await pool.query(
+          `INSERT INTO codes (id, name, character, code, tags, author, likes, copies, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING`,
+          [c.id, c.name, c.character||'Unknown', c.code,
+           Array.isArray(c.tags)?c.tags:[], c.author||'Anonymous',
+           c.likes||0, c.copies||0, c.created_at]
+        );
+        ok++;
+      } catch(e) { fail++; }
+    }
+    const { data: comments } = await sb.from('comments').select('*').order('created_at').limit(1000);
+    let cOk = 0;
+    for (const cm of comments || []) {
+      try {
+        await pool.query(
+          `INSERT INTO comments (id, code_id, text, author, likes, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO NOTHING`,
+          [cm.id, cm.code_id, cm.text, cm.author||'Anonymous', cm.likes||0, cm.created_at]
+        );
+        cOk++;
+      } catch(e) {}
+    }
+    res.json({ codes: { ok, fail, total: codes?.length }, comments: { ok: cOk, total: comments?.length } });
+  });
+}
+
 const PORT = process.env.PORT || 4242;
 initDB().then(() => {
   app.listen(PORT, () => console.log(`JJS Generator: http://localhost:${PORT}`));
