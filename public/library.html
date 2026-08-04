@@ -198,7 +198,6 @@ header::after {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  animation: fadeSlideIn 0.25s ease forwards;
 }
 
 .code-card::before {
@@ -756,6 +755,7 @@ header::after {
   .creator-yt-btn { width: 100%; justify-content: center; }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="2b526684-82f7-4550-8fc6-bebbc645cbfb"></script>
 </head>
 <body>
@@ -975,6 +975,14 @@ function renderCodes(codes, sort) {
       </div>
     </div>
   `}).join('');
+
+  // GSAP stagger entrance
+  if (window.gsap) {
+    gsap.fromTo('.codes-grid .code-card',
+      { opacity: 0, y: 24, scale: 0.96 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.35, stagger: 0.055, ease: 'back.out(1.4)', clearProps: 'transform' }
+    );
+  }
 }
 
 function buildCharFilter(codes) {
@@ -987,9 +995,19 @@ function buildCharFilter(codes) {
     const label = ch.split('(')[0].trim().split(' ')[0];
     return `<button class="char-filter-btn" data-char="${escHtml(ch)}"><span style="color:${theme.color}">${theme.kanji}</span>${escHtml(label)}</button>`;
   }).join('');
+
+  // GSAP stagger chips in from left
+  if (window.gsap) {
+    gsap.fromTo('.char-filter-btn',
+      { opacity: 0, x: -16 },
+      { opacity: 1, x: 0, duration: 0.25, stagger: 0.04, ease: 'power2.out' }
+    );
+  }
+
   bar.querySelectorAll('.char-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const char = btn.dataset.char;
+      if (window.gsap) gsap.to(btn, { scale: 0.9, duration: 0.08, yoyo: true, repeat: 1, ease: 'power2.inOut' });
       if (activeCharFilter === char) {
         activeCharFilter = null;
         bar.querySelectorAll('.char-filter-btn').forEach(b => b.classList.remove('active'));
@@ -1085,6 +1103,7 @@ async function quickCopy(id, btn) {
 
 async function likeCode(id, btn) {
   if (likedIds.includes(id)) return;
+  if (window.gsap) gsap.to(btn, { scale: 1.5, duration: 0.15, ease: 'back.out(2)', yoyo: true, repeat: 1 });
   try {
     const res = await fetch(`/api/library/${id}/like`, { method: 'POST', headers: getAuthHeaders() });
     const data = await res.json();
@@ -1422,6 +1441,29 @@ function renderCreatorCodes(codes) {
       </div>
     </div>
   `}).join('');
+  if (window.gsap) {
+    gsap.fromTo('.creator-codes-grid .code-card',
+      { opacity: 0, y: 20, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.07, ease: 'back.out(1.3)', clearProps: 'transform' }
+    );
+  }
+}
+
+// Page entrance animation
+if (window.gsap) {
+  gsap.fromTo('header', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+  gsap.fromTo('#creator-section',
+    { opacity: 0, y: 32, scale: 0.97 },
+    { opacity: 1, y: 0, scale: 1, duration: 0.5, delay: 0.2, ease: 'back.out(1.2)' }
+  );
+  gsap.fromTo('.stats-row',
+    { opacity: 0, x: -20 },
+    { opacity: 1, x: 0, duration: 0.4, delay: 0.35, ease: 'power2.out' }
+  );
+  gsap.fromTo('.sort-bar',
+    { opacity: 0, y: 12 },
+    { opacity: 1, y: 0, duration: 0.35, delay: 0.45, ease: 'power2.out' }
+  );
 }
 
 loadLibrary('likes');
