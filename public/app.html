@@ -1062,6 +1062,71 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
   .onboard-bar { gap: 4px; justify-content: flex-start; }
 }
 
+/* ── SUPPORT BLOCK ── */
+.support-block {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(124,58,237,0.2);
+  text-align: center;
+}
+.support-text { color: #94a3b8; font-size: 0.82rem; margin-bottom: 10px; }
+.support-btns { display: flex; gap: 8px; justify-content: center; }
+.support-btn-free {
+  background: transparent; border: 1px solid #334155; color: #64748b;
+  padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.support-btn-free:hover { border-color: #64748b; color: #94a3b8; }
+.support-btn-pay {
+  padding: 7px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+  text-decoration: none; transition: all 0.2s; border: 1px solid rgba(124,58,237,0.4);
+  color: #c084fc; background: rgba(124,58,237,0.1);
+}
+.support-btn-pay:hover { background: rgba(124,58,237,0.25); }
+.support-btn-main { background: rgba(124,58,237,0.22); border-color: rgba(124,58,237,0.6); }
+.support-btn-main:hover { background: rgba(124,58,237,0.4); box-shadow: 0 0 16px rgba(124,58,237,0.3); }
+
+/* ── TIMELINE ── */
+.timeline-section {
+  margin-top: 18px;
+  background: rgba(30,42,58,0.5);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px;
+  padding: 16px;
+}
+.timeline-title {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: #c084fc; margin-bottom: 14px;
+}
+.timeline-row { margin-bottom: 10px; }
+.timeline-row-label {
+  display: flex; justify-content: space-between;
+  font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;
+}
+.timeline-row-label strong { color: #e2e8f0; font-weight: 600; }
+.timeline-bar {
+  display: flex; height: 18px; border-radius: 6px; overflow: hidden; width: 100%;
+}
+.tl-seg { height: 100%; transition: width 0.3s ease; }
+.tl-state  { background: rgba(100,116,139,0.45); }
+.tl-hitbox { background: rgba(239,68,68,0.75); }
+.tl-velo   { background: rgba(251,146,60,0.75); }
+.tl-wait   { background: rgba(124,58,237,0.55); }
+.timeline-legend {
+  display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap;
+}
+.timeline-legend span {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.timeline-legend span::before {
+  content: ''; width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+}
+.timeline-legend .tl-l-state::before  { background: rgba(100,116,139,0.6); }
+.timeline-legend .tl-l-hitbox::before { background: rgba(239,68,68,0.8); }
+.timeline-legend .tl-l-velo::before   { background: rgba(251,146,60,0.8); }
+.timeline-legend .tl-l-wait::before   { background: rgba(124,58,237,0.7); }
+
 /* ── MOBILE ── */
 @media (max-width: 600px) {
   header { padding: 16px; }
@@ -1154,6 +1219,14 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
           <div class="code-output" id="code-output"></div>
           <button class="copy-btn" id="copy-btn" onclick="copyCode()">⎘ Copy Code</button>
           <button class="share-btn" id="share-btn" onclick="shareCode()">🔗 Share Build</button>
+          <div id="support-block" class="support-block" style="display:none">
+            <div class="support-text">💜 Enjoying the tool? Support development</div>
+            <div class="support-btns">
+              <button onclick="dismissSupport()" class="support-btn-free">Free</button>
+              <a href="https://ko-fi.com/jjsbuilder" target="_blank" class="support-btn-pay">☕ $1</a>
+              <a href="https://ko-fi.com/jjsbuilder" target="_blank" class="support-btn-pay support-btn-main">⚡ $3 Support</a>
+            </div>
+          </div>
         </div>
       </div>
       <!-- RIGHT: live preview panel -->
@@ -1188,6 +1261,18 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
         <button class="btn-edit-build" onclick="loadDecodedIntoGenerator()">✏ Edit This Build →</button>
       </div>
       <div id="decode-cards"></div>
+    </div>
+  </div>
+
+  <!-- TIMELINE — shared, shown after generate or decode -->
+  <div id="timeline-section" class="timeline-section" style="display:none">
+    <div class="timeline-title">⚡ Move Timeline</div>
+    <div id="timeline-rows"></div>
+    <div class="timeline-legend">
+      <span class="tl-l-state">STATE</span>
+      <span class="tl-l-hitbox">HITBOX</span>
+      <span class="tl-l-velo">VELO</span>
+      <span class="tl-l-wait">WAIT</span>
     </div>
   </div>
 </div>
@@ -1377,6 +1462,8 @@ async function generateCode() {
     box.style.display = 'block';
     document.getElementById('gen-status').textContent = `✓ ${data.slotsCount} slot(s) generated`;
     renderMovePreview(data.code);
+    renderTimelineFromForm();
+    trackUsage();
   } catch(err) {
     document.getElementById('gen-error').textContent = 'Error: ' + err.message;
   } finally {
@@ -1427,6 +1514,83 @@ function loadSharedCode() {
   }
 }
 
+// ── SUPPORT BLOCK ──
+function trackUsage() {
+  const count = parseInt(localStorage.getItem('jjs_gen_count') || '0') + 1;
+  localStorage.setItem('jjs_gen_count', count);
+  if (count >= 3 && !localStorage.getItem('jjs_support_dismissed')) {
+    document.getElementById('support-block').style.display = 'block';
+  }
+}
+function dismissSupport() {
+  document.getElementById('support-block').style.display = 'none';
+  localStorage.setItem('jjs_support_dismissed', '1');
+}
+
+// ── TIMELINE ──
+function renderTimeline(moves) {
+  const section = document.getElementById('timeline-section');
+  const rows = document.getElementById('timeline-rows');
+  if (!moves || moves.length === 0) { section.style.display = 'none'; return; }
+
+  const colors = { STATE: 'tl-state', HITBOX: 'tl-hitbox', VELO: 'tl-velo', WAIT: 'tl-wait' };
+
+  rows.innerHTML = moves.map(m => {
+    let line = [];
+    try { line = JSON.parse(m.DATA || m.data || '{}').Line || []; } catch(e) {}
+
+    const segs = line.map(seg => ({
+      type: seg.K_NAME,
+      time: seg.TIME ?? seg.STUN ?? 0.15
+    })).filter(s => s.time > 0);
+
+    const total = segs.reduce((a, s) => a + s.time, 0) || 1;
+    const slotName = m.K_NAME || m.slotType || 'SKILL';
+    const moveName = m.NAME || m.name || 'Move';
+
+    const damage = (() => {
+      const h = line.find(l => l.K_NAME === 'HITBOX');
+      return h ? `${h.DAMAGE ?? 0} dmg` : '';
+    })();
+
+    const bars = segs.map(s =>
+      `<div class="tl-seg ${colors[s.type] || 'tl-state'}" style="width:${(s.time/total*100).toFixed(1)}%" title="${s.type} ${s.time.toFixed(2)}s"></div>`
+    ).join('');
+
+    return `<div class="timeline-row">
+      <div class="timeline-row-label">
+        <span><strong>${moveName}</strong> <span style="color:#7c3aed;font-size:0.68rem">${slotName}</span></span>
+        <span>${damage}</span>
+      </div>
+      <div class="timeline-bar">${bars}</div>
+    </div>`;
+  }).join('');
+
+  section.style.display = segs => segs ? 'block' : 'none';
+  section.style.display = 'block';
+}
+
+function renderTimelineFromForm() {
+  const moves = getMoveData().map(m => {
+    const stateTime = 0.1;
+    const veloTime  = 0.3;
+    const hitboxTime = Number(m.stun) || 0.5;
+    const waitTime  = Number(m.duration) || 0.5;
+    const DATA = JSON.stringify({ Line: [
+      { K_NAME: 'STATE',  TIME: stateTime  },
+      { K_NAME: 'HITBOX', TIME: hitboxTime, DAMAGE: m.damage },
+      { K_NAME: 'VELO',   TIME: veloTime   },
+      { K_NAME: 'WAIT',   TIME: waitTime   },
+    ]});
+    return { NAME: m.name, K_NAME: m.slotType, DATA };
+  });
+  renderTimeline(moves);
+}
+
+function renderTimelineFromSlots(slots) {
+  renderTimeline(Array.isArray(slots) ? slots : []);
+}
+
 function loadExample() {
   // clear existing moves
   document.getElementById('moves-list').innerHTML = '';
@@ -1471,6 +1635,8 @@ async function decodeCode() {
     soundDecode();
     renderSlotCards(data.slots, 'decode-cards');
     document.getElementById('decode-output').style.display = 'block';
+    renderTimelineFromSlots(data.slots);
+    trackUsage();
   } catch(err) {
     document.getElementById('decode-error').textContent = 'Error: ' + err.message;
   }
