@@ -172,11 +172,15 @@ app.get('/api/library', async (req, res) => {
   try {
     const SORT_MAP = { likes: 'likes', copies: 'copies', new: 'created_at' };
     const column = SORT_MAP[req.query.sort] || 'likes';
-    const { data, error } = await supabase
+    let query = supabase
       .from('codes')
       .select('id, name, character, tags, author, likes, copies, created_at')
       .order(column, { ascending: false })
       .limit(50);
+    if (req.query.author) {
+      query = query.ilike('author', req.query.author);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     res.json({ codes: data });
   } catch (err) {
