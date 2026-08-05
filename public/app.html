@@ -862,6 +862,102 @@ label[data-tip]:hover::after { opacity: 1; }
 .preview-stat { font-size:0.68rem; color:var(--text-dim); }
 .preview-stat span { color:var(--text); font-weight:600; }
 
+/* ── BUILD ARCHETYPE + COMBO TIMELINE ── */
+.build-archetype {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.archetype-badge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-bottom: 5px;
+  display: inline-block;
+}
+.archetype-desc {
+  font-size: 0.71rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.combo-timeline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.timeline-section-label {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #475569;
+  margin-bottom: 2px;
+}
+.timeline-move { display: flex; flex-direction: column; gap: 3px; }
+.timeline-move-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.timeline-bar-wrap {
+  height: 14px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+.tbar-hit   { background: #f97316; height: 100%; transition: width 0.35s cubic-bezier(.4,0,.2,1); min-width: 2px; }
+.tbar-stun  { background: #34d399; height: 100%; transition: width 0.35s cubic-bezier(.4,0,.2,1) 0.05s; }
+.tbar-cd    { background: rgba(255,255,255,0.05); height: 100%; flex: 1; }
+.timeline-legend {
+  display: flex;
+  gap: 10px;
+  font-size: 0.57rem;
+  color: #475569;
+}
+.tleg { display: flex; align-items: center; gap: 3px; }
+.tleg-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+.timeline-chain {
+  font-size: 0.61rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+.chain-ok   { color: #34d399; }
+.chain-warn { color: #fbbf24; }
+.chain-no   { color: #475569; }
+.timeline-divider { height: 1px; background: rgba(255,255,255,0.04); margin: 2px 0; }
+.timeline-summary {
+  display: flex;
+  gap: 0;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.summary-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 6px;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+.summary-stat:last-child { border-right: none; }
+.summary-stat-label { font-size: 0.52rem; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 2px; }
+.summary-stat-value { font-size: 1rem; font-weight: 700; font-family: 'Rajdhani', sans-serif; }
+
 @media (max-width: 860px) {
   .gen-layout { grid-template-columns: 1fr; }
   .gen-preview-panel { position: static; }
@@ -1832,6 +1928,28 @@ function applyLang() {
 }
 
 // ── LIVE PREVIEW ─────────────────────────────────────────────────
+function classifyBuild(moves) {
+  if (!moves.length) return null;
+  const avg = fn => moves.reduce((s,m) => s + (Number(fn(m))||0), 0) / moves.length;
+  const avgDmg   = avg(m => m.damage);
+  const avgStun  = avg(m => m.stun);
+  const avgForce = avg(m => m.force);
+  const avgForceY = avg(m => m.forceY);
+  const avgCd    = avg(m => m.cooldown);
+  const hasUnblock = moves.some(m => m.blockable === false);
+  if (avgForceY > 20)
+    return { key:'AERIAL',   label:'Aerial Launcher', color:'#a78bfa', bg:'rgba(167,139,250,0.08)', desc:'Launches enemies airborne — impossible to block mid-air follow-ups' };
+  if (hasUnblock && avgDmg > 25)
+    return { key:'BREAKER',  label:'Block Breaker',   color:'#f87171', bg:'rgba(248,113,113,0.08)', desc:'Unblockable hits — enemy must dodge or eat full damage' };
+  if (avgStun > 0.7 && avgDmg < 28)
+    return { key:'SETUP',    label:'Setup Combo',     color:'#34d399', bg:'rgba(52,211,153,0.08)',  desc:'Long stun chains moves together — land the opener and the rest follows' };
+  if (avgForce > 65)
+    return { key:'ZONER',    label:'Zoner',           color:'#60a5fa', bg:'rgba(96,165,250,0.08)',  desc:'High knockback controls space — punishes every approach' };
+  if (avgDmg > 32 && avgCd < 6)
+    return { key:'RUSH',     label:'Rush',            color:'#f97316', bg:'rgba(249,115,22,0.08)',  desc:'High damage, short cooldowns — relentless pressure with no breathing room' };
+  return   { key:'BALANCED', label:'Balanced',        color:'#c084fc', bg:'rgba(192,132,252,0.08)', desc:'Versatile toolkit — adapts to any playstyle or situation' };
+}
+
 const SLOT_META = {
   SKILL:     { g:'linear-gradient(135deg,#0f3460,#1e40af)', accent:'#60a5fa', glow:'rgba(96,165,250,0.45)',  border:'rgba(96,165,250,0.3)',  symbol:'⚡' },
   MELEE:     { g:'linear-gradient(135deg,#450a0a,#991b1b)', accent:'#f87171', glow:'rgba(248,113,113,0.45)', border:'rgba(248,113,113,0.3)', symbol:'⚔' },
@@ -1849,69 +1967,84 @@ function updateLivePreview() {
     container.innerHTML = `<div class="preview-empty-state"><div class="preview-empty-icon">⚔</div>Add a move to see<br>your build preview</div>`;
     return;
   }
-  container.innerHTML = moves.map((m, i) => {
+
+  const arch = classifyBuild(moves);
+  const totalDmg = moves.reduce((s,m) => s + (Number(m.damage)||0), 0);
+  const totalDur = moves.reduce((s,m) => s + (Number(m.duration)||0.5), 0);
+
+  const timelineRows = moves.map((m, i) => {
+    const cd   = Number(m.cooldown) || 5;
+    const dur  = Number(m.duration) || 0.5;
+    const stun = Number(m.stun)     || 0;
+    const total = Math.max(cd, dur + stun + 0.3);
+    const hitPct  = Math.min(38, dur  / total * 100);
+    const stunPct = Math.min(38, stun / total * 100);
     const type = (m.slotType || 'SKILL').toUpperCase();
     const meta = SLOT_META[type] || DEFAULT_META;
-    const name = m.name || 'Unnamed Move';
-    return `<div class="live-card" style="--c-glow:${meta.glow};--c-border:${meta.border};--c-accent:${meta.accent}">
-      <div class="slash-fx"><div class="slash-line"></div></div>
-      <div class="hit-flash"></div>
-      <div class="live-card-header" style="background:${meta.g}" data-symbol="${meta.symbol}">
-        <span class="live-card-type">${type}</span>
-        <span class="live-card-index">SLOT ${i+1}</span>
-      </div>
-      <div class="live-card-body">
-        <div class="live-card-name">${escHtml(name)}</div>
-        <div class="live-card-stats">
-          <div class="live-stat">
-            <span class="live-stat-label">DAMAGE</span>
-            <span class="live-stat-value" style="color:${meta.accent};text-shadow:0 0 14px ${meta.glow}">${m.damage || 0}</span>
-            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.damage||0)/150*100).toFixed(1)}"></div></div>
-          </div>
-          <div class="live-stat">
-            <span class="live-stat-label">STUN</span>
-            <span class="live-stat-value">${m.stun || 0}s</span>
-            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.stun||0)/5*100).toFixed(1)}"></div></div>
-          </div>
-          <div class="live-stat">
-            <span class="live-stat-label">COOLDOWN</span>
-            <span class="live-stat-value">${m.cooldown || 0}s</span>
-            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.cooldown||0)/20*100).toFixed(1)}"></div></div>
-          </div>
-          <div class="live-stat">
-            <span class="live-stat-label">FORCE Z</span>
-            <span class="live-stat-value">${m.force || 0}</span>
-            <div class="live-stat-bar"><div class="live-stat-bar-fill" data-pct="${Math.min(100,(m.force||0)/200*100).toFixed(1)}"></div></div>
-          </div>
+
+    let chain = '';
+    if (i < moves.length - 1) {
+      if (stun >= 0.5)       chain = `<div class="timeline-chain chain-ok">✓ ${stun}s stun — chain window open</div>`;
+      else if (stun > 0)     chain = `<div class="timeline-chain chain-warn">⚠ ${stun}s stun — tight, needs timing</div>`;
+      else                   chain = `<div class="timeline-chain chain-no">— no stun — reset between moves</div>`;
+    }
+
+    return `
+      <div class="timeline-move">
+        <div class="timeline-move-name">
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:0.57rem;font-weight:800;letter-spacing:1px;color:${meta.accent}">${type}</span>
+            <span>${escHtml(m.name || 'Move ' + (i+1))}</span>
+          </span>
+          <span style="font-size:0.67rem;color:#f87171;font-weight:700">${m.damage||0} dmg</span>
         </div>
-        <div class="live-card-footer">
-          ${Number(m.forceY) ? `<span class="live-chip launch">↑ Y:${m.forceY}</span>` : ''}
-          <span class="live-chip ${m.blockable !== false ? 'block' : 'unblock'}">${m.blockable !== false ? 'BLOCKABLE' : 'UNBLOCKABLE'}</span>
+        <div class="timeline-bar-wrap">
+          <div class="tbar-hit"  data-w="${hitPct}"  style="width:0%"></div>
+          <div class="tbar-stun" data-w="${stunPct}" style="width:0%"></div>
+          <div class="tbar-cd"></div>
         </div>
+        <div class="timeline-legend">
+          <span class="tleg"><span class="tleg-dot" style="background:#f97316"></span>${dur}s hit</span>
+          <span class="tleg"><span class="tleg-dot" style="background:#34d399"></span>${stun}s stun</span>
+          <span class="tleg"><span class="tleg-dot" style="background:rgba(255,255,255,0.1)"></span>${cd}s cd</span>
+        </div>
+        ${chain}
       </div>
-    </div>`;
+      ${i < moves.length - 1 ? '<div class="timeline-divider"></div>' : ''}
+    `;
   }).join('');
+
+  container.innerHTML = `
+    <div class="build-archetype" style="border-color:${arch.color}33;background:${arch.bg}">
+      <div>
+        <span class="archetype-badge" style="background:${arch.bg};color:${arch.color};border:1px solid ${arch.color}55">${arch.key}</span>
+        <div class="archetype-desc">${arch.desc}</div>
+      </div>
+    </div>
+    <div class="combo-timeline-wrap">
+      <div class="timeline-section-label">⚡ Combo Flow</div>
+      ${timelineRows}
+    </div>
+    <div class="timeline-summary">
+      <div class="summary-stat">
+        <span class="summary-stat-label">Moves</span>
+        <span class="summary-stat-value" style="color:var(--accent-light)">${moves.length}</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-stat-label">Total DMG</span>
+        <span class="summary-stat-value" style="color:#f87171">${totalDmg}</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-stat-label">Hit Time</span>
+        <span class="summary-stat-value" style="color:#fbbf24">${totalDur.toFixed(1)}s</span>
+      </div>
+    </div>
+  `;
+
   requestAnimationFrame(() => {
-    const PARTICLE_COLORS = ['#fff','#c084fc','#60a5fa','#f87171','#fbbf24'];
-    document.querySelectorAll('#live-preview-cards .live-card').forEach(card => {
-      // 1. slash
-      card.classList.add('slashing');
-      setTimeout(() => card.classList.remove('slashing'), 420);
-      // 2. animated bars
-      card.querySelectorAll('.live-stat-bar-fill').forEach(fill => {
-        const pct = fill.getAttribute('data-pct') || '0';
-        requestAnimationFrame(() => { fill.style.width = pct + '%'; });
-      });
-      // 3. particles from card center
-      for (let i = 0; i < 10; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        const angle = (i / 10) * 360 + Math.random() * 36;
-        const dist = (28 + Math.random() * 38) + 'px';
-        p.style.cssText = `--a:${angle}deg;--d:${dist};background:${PARTICLE_COLORS[i%PARTICLE_COLORS.length]};animation-delay:${Math.random()*60}ms`;
-        card.appendChild(p);
-        setTimeout(() => p.remove(), 650);
-      }
+    container.querySelectorAll('[data-w]').forEach(el => {
+      const w = el.getAttribute('data-w');
+      requestAnimationFrame(() => { el.style.width = w + '%'; });
     });
   });
 }
