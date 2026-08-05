@@ -963,6 +963,102 @@ label[data-tip]:hover::after { opacity: 1; }
   .gen-preview-panel { position: static; }
 }
 
+/* ── PAYMENT MODAL ── */
+.header-support-btn {
+  padding: 6px 12px;
+  background: rgba(192,132,252,0.08);
+  border: 1px solid rgba(192,132,252,0.22);
+  border-radius: 8px;
+  color: #c084fc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.header-support-btn:hover {
+  background: rgba(192,132,252,0.18);
+  border-color: rgba(192,132,252,0.5);
+  box-shadow: 0 0 12px rgba(192,132,252,0.2);
+}
+@media (max-width: 600px) { .header-support-btn .support-btn-text { display: none; } }
+
+.payment-modal-wrap {
+  background: var(--bg-card);
+  border: 1px solid rgba(124,58,237,0.35);
+  border-radius: 16px;
+  padding: 28px 22px 22px;
+  width: 92%;
+  max-width: 480px;
+  position: relative;
+  animation: fadeSlideIn 0.22s ease;
+}
+.payment-modal-header { text-align: center; margin-bottom: 22px; }
+.payment-modal-title {
+  font-size: 1.15rem; font-weight: 700;
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.5px; color: var(--text);
+  margin-bottom: 5px;
+}
+.payment-modal-sub { font-size: 0.76rem; color: var(--text-dim); }
+.payment-tiers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 6px; }
+.tier-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 11px; padding: 15px 10px;
+  text-align: center; position: relative;
+  transition: border-color 0.2s;
+  display: flex; flex-direction: column;
+}
+.tier-card:hover { border-color: rgba(124,58,237,0.3); }
+.tier-super { border-color: rgba(124,58,237,0.38); background: rgba(124,58,237,0.06); }
+.tier-badge {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #fff; font-size: 0.52rem; font-weight: 800;
+  letter-spacing: 1px; padding: 2px 8px; border-radius: 5px; white-space: nowrap;
+}
+.tier-icon { font-size: 1.4rem; margin-bottom: 5px; }
+.tier-name {
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text); margin-bottom: 2px;
+}
+.tier-price {
+  font-size: 1.5rem; font-weight: 800;
+  font-family: 'Rajdhani', sans-serif;
+  color: var(--accent-light); margin-bottom: 7px;
+}
+.tier-desc {
+  font-size: 0.63rem; color: var(--text-dim);
+  line-height: 1.4; margin-bottom: 11px; flex: 1;
+}
+.tier-btn {
+  display: block; width: 100%; padding: 8px 0;
+  border-radius: 8px; font-size: 0.72rem; font-weight: 700;
+  cursor: pointer; text-decoration: none; text-align: center;
+  transition: all 0.2s; border: none;
+}
+.tier-btn-free { background: transparent; border: 1px solid #334155; color: #64748b; }
+.tier-btn-free:hover { border-color: #64748b; color: #94a3b8; }
+.tier-btn-pay { background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.35); color: #c084fc; }
+.tier-btn-pay:hover { background: rgba(124,58,237,0.25); }
+.tier-btn-main {
+  background: linear-gradient(135deg, rgba(124,58,237,0.45), rgba(147,51,234,0.45));
+  border: 1px solid rgba(124,58,237,0.6); color: #e9d5ff;
+  box-shadow: 0 0 10px rgba(124,58,237,0.2);
+}
+.tier-btn-main:hover { box-shadow: 0 0 20px rgba(124,58,237,0.4); }
+.payment-modal-close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: #475569;
+  font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1;
+}
+.payment-modal-close:hover { color: var(--text); }
+@media (max-width: 480px) {
+  .payment-tiers { grid-template-columns: 1fr; }
+  .tier-desc { min-height: unset; }
+}
+
 /* ── DECODE PANEL ── */
 .decode-area textarea {
   width: 100%;
@@ -1289,6 +1385,7 @@ pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
     <div class="header-nav">
       <a href="/library.html" class="header-nav-lib" onmouseover="this.style.borderColor='#7c3aed';this.style.color='#c084fc'" onmouseout="this.style.borderColor='rgba(124,58,237,0.3)';this.style.color='#64748b'">📚 <span class="nav-text">Library</span></a>
       <a href="https://www.youtube.com/@RedInkJJS" target="_blank" rel="noopener" class="header-nav-yt" onmouseover="this.style.borderColor='#ef4444';this.style.color='#fca5a5'" onmouseout="this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#64748b'">▶ RedInk</a>
+      <button class="header-support-btn" onclick="openPaymentModal()">💜 <span class="support-btn-text">Support</span></button>
       <div class="lang-selector">
         <button class="lang-btn" onclick="toggleLangDropdown()" id="lang-btn-main">
           <span id="lang-flag-current">🇺🇸</span>
@@ -1643,18 +1740,22 @@ function loadSharedCode() {
   }
 }
 
-// ── SUPPORT BLOCK ──
+// ── SUPPORT / PAYMENT ──
+function openPaymentModal() {
+  document.getElementById('payment-modal').classList.add('open');
+}
+function closePaymentModal() {
+  document.getElementById('payment-modal').classList.remove('open');
+  localStorage.setItem('jjs_support_dismissed', '1');
+}
 function trackUsage() {
   const count = parseInt(localStorage.getItem('jjs_gen_count') || '0') + 1;
   localStorage.setItem('jjs_gen_count', count);
-  if (count >= 3 && !localStorage.getItem('jjs_support_dismissed')) {
-    document.getElementById('support-block').style.display = 'block';
+  if (count === 3 && !localStorage.getItem('jjs_support_dismissed')) {
+    setTimeout(() => openPaymentModal(), 800);
   }
 }
-function dismissSupport() {
-  document.getElementById('support-block').style.display = 'none';
-  localStorage.setItem('jjs_support_dismissed', '1');
-}
+function dismissSupport() { closePaymentModal(); }
 
 // ── TIMELINE ──
 function renderTimeline(moves) {
@@ -2383,6 +2484,45 @@ applyLang();
 
 addMove();
 loadSharedCode();
+document.getElementById('payment-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('payment-modal')) closePaymentModal();
+});
 </script>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="payment-modal-wrap">
+    <button class="payment-modal-close" onclick="closePaymentModal()">✕</button>
+    <div class="payment-modal-header">
+      <div class="payment-modal-title">💜 Support JJS Builder</div>
+      <div class="payment-modal-sub">Built by the community — kept alive by your support</div>
+    </div>
+    <div class="payment-tiers">
+      <div class="tier-card tier-free">
+        <div class="tier-icon">🎮</div>
+        <div class="tier-name">Free</div>
+        <div class="tier-price">$0</div>
+        <div class="tier-desc">Full access to all features, forever. No limits.</div>
+        <button class="tier-btn tier-btn-free" onclick="closePaymentModal()">Continue Free</button>
+      </div>
+      <div class="tier-card tier-coffee">
+        <div class="tier-icon">☕</div>
+        <div class="tier-name">Coffee</div>
+        <div class="tier-price">$1</div>
+        <div class="tier-desc">Show appreciation and help keep the server running.</div>
+        <a href="https://ko-fi.com/jjsbuilder" target="_blank" rel="noopener" class="tier-btn tier-btn-pay" onclick="closePaymentModal()">Support $1</a>
+      </div>
+      <div class="tier-card tier-super">
+        <div class="tier-badge">⭐ TOP</div>
+        <div class="tier-icon">⚡</div>
+        <div class="tier-name">Super Fan</div>
+        <div class="tier-price">$3</div>
+        <div class="tier-desc">Max support + first access to future features when they drop.</div>
+        <a href="https://ko-fi.com/jjsbuilder" target="_blank" rel="noopener" class="tier-btn tier-btn-main" onclick="closePaymentModal()">Support $3</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
