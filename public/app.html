@@ -963,6 +963,19 @@ label[data-tip]:hover::after { opacity: 1; }
   .gen-preview-panel { position: static; }
 }
 
+/* ── MODAL OVERLAY ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,7,15,0.85);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
 /* ── PAYMENT MODAL ── */
 .header-support-btn {
   padding: 6px 12px;
